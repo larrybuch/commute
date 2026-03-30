@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Red Hook Commute</title>
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #1c1c1e;
+      --muted: #8e8e93;
+      --border: #e5e5ea;
+      --blue: #007aff;
+      --green: #34c759;
+      --yellow: #ff9500;
+      --red: #ff3b30;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1e;
+        --card: #2c2c2e;
+        --text: #f2f2f7;
+        --muted: #8e8e93;
+        --border: #3a3a3c;
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: max(env(safe-area-inset-top), 16px) 16px max(env(safe-area-inset-bottom), 24px);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 14px;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .toggle {
+      display: flex;
+      background: var(--border);
+      border-radius: 9px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .toggle button {
+      border: none;
+      background: none;
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .toggle button.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.14);
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .badge-live   { background: #d1fae5; color: #065f46; }
+    .badge-sched  { background: #fef3c7; color: #78350f; }
+    .badge-error  { background: #fee2e2; color: #991b1b; }
+
+    @media (prefers-color-scheme: dark) {
+      .badge-live  { background: #064e3b; color: #6ee7b7; }
+      .badge-sched { background: #451a03; color: #fbbf24; }
+      .badge-error { background: #450a0a; color: #fca5a5; }
+    }
+
+    .loading { color: var(--muted); font-size: 14px; }
+    .err     { color: var(--red);   font-size: 13px; }
+
+    /* ── Weather ── */
+    .weather-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .wx-icon { font-size: 44px; line-height: 1; }
+
+    .wx-temp {
+      font-size: 38px;
+      font-weight: 200;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .wx-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+      line-height: 1.4;
+    }
+
+    .wx-rain { color: var(--blue); font-weight: 600; }
+
+    .wx-sentence {
+      font-size: 14px;
+      line-height: 1.5;
+      margin-top: 11px;
+      padding-top: 11px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Citibike ── */
+    .bike-grid {
+      display: flex;
+    }
+
+    .bike-stat {
+      flex: 1;
+      text-align: center;
+      padding: 2px 0;
+    }
+
+    .bike-stat + .bike-stat {
+      border-left: 1px solid var(--border);
+    }
+
+    .big-num {
+      font-size: 46px;
+      font-weight: 200;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .c-green  { color: var(--green); }
+    .c-yellow { color: var(--yellow); }
+    .c-red    { color: var(--red); }
+    .c-muted  { color: var(--muted); }
+
+    .station-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 11px;
+      padding-top: 11px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Dock rows */
+    .dock-list { display: flex; flex-direction: column; }
+
+    .dock-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dock-row:last-child { border-bottom: none; }
+    .dock-row:first-child { padding-top: 0; }
+
+    .dock-name { font-size: 14px; font-weight: 500; }
+    .dock-dist { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .dock-num  { font-size: 26px; font-weight: 300; }
+
+    /* ── Ferry ── */
+    .section-head {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      padding: 8px 0 5px;
+    }
+
+    .dep-list { display: flex; flex-direction: column; }
+
+    .dep-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dep-row:last-child { border-bottom: none; }
+    .dep-row:first-child { padding-top: 0; }
+
+    .dep-time {
+      font-size: 24px;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+    }
+
+    .dep-time.urgent { color: var(--red); font-weight: 500; }
+
+    .dep-right { text-align: right; }
+
+    .dep-countdown {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .dep-countdown.urgent { color: var(--red); }
+    .dep-countdown.imminent { color: var(--green); }
+
+    .dep-dest {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .dep-leave {
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .ferry-note {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .ferry-note a { color: var(--blue); text-decoration: none; }
+
+    /* ── Bus ── */
+    .bus-list { display: flex; flex-direction: column; }
+
+    .bus-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bus-row:last-child { border-bottom: none; }
+    .bus-row:first-child { padding-top: 0; }
+
+    .bus-pill {
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      min-width: 46px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .bus-times {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      align-items: baseline;
+    }
+
+    .bus-arrival { font-size: 17px; }
+    .bus-arrival.soon { color: var(--red); font-weight: 600; }
+    .bus-arrival.none { font-size: 13px; color: var(--muted); }
+
+    /* ── Footer ── */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 2px 0;
+    }
+
+    .last-updated { font-size: 12px; color: var(--muted); }
+
+    .refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--blue);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .refresh-btn:active { opacity: 0.6; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="app-title">Red Hook ↔ NYT</div>
+    <div class="toggle">
+      <button id="btn-work" class="active" onclick="setDir('work')">→ Work</button>
+      <button id="btn-home" onclick="setDir('home')">→ Home</button>
+    </div>
+  </div>
+
+  <!-- Weather -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label">Weather · Red Hook</span>
+      <span class="badge badge-live">Live</span>
+    </div>
+    <div id="wx-body" class="loading">Loading…</div>
+  </div>
+
+  <!-- Citibike -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label" id="bike-label">Citibike — Dwight & Dikeman</span>
+      <span class="badge badge-live">Live</span>
+    </div>
+    <div id="bike-body" class="loading">Loading…</div>
+  </div>
+
+  <!-- Ferry -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label" id="ferry-label">Ferry</span>
+      <span class="badge badge-sched">Schedule</span>
+    </div>
+    <div id="ferry-body" class="loading">Loading…</div>
+  </div>
+
+  <!-- Bus -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-label" id="bus-label">B61 / B57</span>
+      <span class="badge badge-live" id="bus-badge">Live</span>
+    </div>
+    <div id="bus-body" class="loading">Loading…</div>
+  </div>
+
+  <div class="footer">
+    <div class="last-updated" id="ts"></div>
+    <button class="refresh-btn" onclick="refresh()">↻ Refresh</button>
+  </div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HOME_LAT = 40.6760;
+const HOME_LON = -74.0115;
+
+// MTA BusTime API key
+const MTA_KEY = '47d976ac-47a9-4009-816a-a39448f4866e';
+
+// Bus stop IDs (discovered via MTA BusTime stops-for-location API)
+const BUS_STOPS = {
+  work: [
+    { route: 'B61', id: 'MTA_305096', name: 'Van Brunt/Dikeman' },
+    { route: 'B57', id: 'MTA_901797', name: 'Otsego/Creamer' },
+  ],
+  home: [
+    { route: 'B57', id: 'MTA_305211', name: 'Jay St/Fulton' },
+    { route: 'B61', id: 'MTA_307408', name: 'Boerum Pl/Joralemon' },
+  ],
+};
+
+// South Brooklyn Ferry — actual weekday schedule from ferry.nyc
+// All times 24h (HH:MM)
+const FERRY = {
+  // Departures from Atlantic Basin heading to Wall St → 34th St
+  fromRH: [
+    '06:48','07:33','08:18','09:03','09:48','10:33','11:18','12:03',
+    '12:48','13:33','14:18','15:03','15:48','16:33','17:18','18:03',
+    '18:48','19:33','20:18','21:03',
+  ],
+  // Departures from 34th St/Pier 79 heading back toward Red Hook
+  // Ferry stops at Wall St ~18 min later, arrives Red Hook ~35 min later
+  from34th: [
+    '07:22','08:07','08:52','09:39','10:24','11:09','11:54','12:39',
+    '13:24','14:09','14:54','15:39','16:24','17:09','17:54','18:39',
+    '19:54','20:39','21:24',
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+
+let direction = 'work';
+let refreshTimer = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function hhmm(h, m) {
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function parseMins(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function addMins(timeStr, delta) {
+  let total = parseMins(timeStr) + delta;
+  return hhmm(Math.floor(total / 60) % 24, total % 60);
+}
+
+function formatTime(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function nowMins() {
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function nextDeps(schedule, count = 3) {
+  const nm = nowMins();
+  return schedule.filter(t => parseMins(t) >= nm - 1).slice(0, count);
+}
+
+function countdownLabel(timeStr) {
+  const diff = parseMins(timeStr) - nowMins();
+  if (diff <= 0) return '🚨 Now';
+  if (diff === 1) return '1 min';
+  return `${diff} min`;
+}
+
+function countdownClass(timeStr) {
+  const diff = parseMins(timeStr) - nowMins();
+  if (diff <= 0) return 'imminent';
+  if (diff <= 10) return 'urgent';
+  return '';
+}
+
+function colorNum(n, goodThresh, warnThresh) {
+  if (n >= goodThresh) return 'c-green';
+  if (n >= warnThresh) return 'c-yellow';
+  return 'c-red';
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 3958.8; // miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 +
+    Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Build a single departure row
+function depRow(timeStr, destination) {
+  const cc = countdownClass(timeStr);
+  const cl = countdownLabel(timeStr);
+  return `<div class="dep-row">
+    <div class="dep-time ${cc === 'urgent' || cc === 'imminent' ? 'urgent' : ''}">${formatTime(timeStr)}</div>
+    <div class="dep-right">
+      <div class="dep-countdown ${cc}">${cl}</div>
+      <div class="dep-dest">${destination}</div>
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DIRECTION TOGGLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+function setDir(dir) {
+  direction = dir;
+  document.getElementById('btn-work').classList.toggle('active', dir === 'work');
+  document.getElementById('btn-home').classList.toggle('active', dir === 'home');
+  refresh();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFRESH
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function refresh() {
+  clearTimeout(refreshTimer);
+  await Promise.all([loadWeather(), loadCitibike(), loadFerry(), loadBus()]);
+  const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  document.getElementById('ts').textContent = `Updated ${t}`;
+  // Auto-refresh every 60s while page is visible
+  refreshTimer = setTimeout(() => {
+    if (!document.hidden) refresh();
+  }, 60000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refresh();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEATHER  (Open-Meteo, no key required)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadWeather() {
+  const el = document.getElementById('wx-body');
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast`
+      + `?latitude=${HOME_LAT}&longitude=${HOME_LON}`
+      + `&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`
+      + `&hourly=precipitation_probability,weather_code`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max`
+      + `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+      + `&forecast_days=1&timezone=America%2FNew_York`;
+    const data = await fetch(url).then(r => r.json());
+    const c = data.current;
+
+    const temp   = Math.round(c.temperature_2m);
+    const feels  = Math.round(c.apparent_temperature);
+    const precip = c.precipitation;
+    const code   = c.weather_code;
+    const wind   = Math.round(c.wind_speed_10m);
+    const isWet  = code >= 51;
+
+    const sentence = buildDaySentence(c, data.daily, data.hourly);
+
+    el.innerHTML = `
+      <div class="weather-row">
+        <div class="wx-icon">${wxIcon(code)}</div>
+        <div>
+          <div class="wx-temp">${temp}°</div>
+          <div class="wx-sub">
+            Feels ${feels}° · ${wxDesc(code)} · ${wind} mph
+            ${isWet ? `<br><span class="wx-rain">⚠ Rain: ${precip.toFixed(2)}" current</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="wx-sentence">${sentence}</div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="err">Weather unavailable</div>';
+  }
+}
+
+function buildDaySentence(current, daily, hourly) {
+  const high     = Math.round(daily.temperature_2m_max[0]);
+  const low      = Math.round(daily.temperature_2m_min[0]);
+  const maxWind  = Math.round(daily.wind_speed_10m_max[0]);
+  const nowHour  = new Date().getHours();
+
+  // Map hourly precip probabilities by hour for the rest of today
+  const precipByHour = {};
+  (hourly.time || []).forEach((t, i) => {
+    const h = parseInt(t.split('T')[1], 10); // "07:00" -> 7
+    if (h >= nowHour) precipByHour[h] = hourly.precipitation_probability[i];
+  });
+
+  const THRESH = 45;
+  const hasRain = (start, end) =>
+    Array.from({length: end - start}, (_, i) => start + i)
+      .some(h => (precipByHour[h] ?? 0) >= THRESH);
+
+  const morningRain   = hasRain(6,  12);
+  const afternoonRain = hasRain(12, 17);
+  const eveningRain   = hasRain(17, 22);
+  const raining       = current.weather_code >= 51;
+
+  const parts = [];
+
+  // Core temp line
+  parts.push(`High ${high}°, low ${low}°.`);
+
+  // Rain narrative
+  const periods = [morningRain && 'morning', afternoonRain && 'afternoon', eveningRain && 'evening'].filter(Boolean);
+  if (raining && periods.length) {
+    parts.push('Rainy all day — pack an umbrella.');
+  } else if (raining) {
+    parts.push('Raining now, expected to clear.');
+  } else if (periods.length === 3) {
+    parts.push('Rain throughout the day — umbrella recommended.');
+  } else if (periods.length) {
+    const when = periods.length === 2
+      ? `${periods[0]} and ${periods[1]}`
+      : periods[0];
+    parts.push(`Rain expected this ${when} — pack an umbrella.`);
+  }
+
+  // Cold / freeze alerts
+  if (low <= 28) {
+    parts.push('Freezing temps tonight.');
+  } else if (high <= 35) {
+    parts.push('Stays cold all day — bundle up.');
+  }
+
+  // Wind alert
+  if (maxWind >= 25) {
+    parts.push(`Very windy today, up to ${maxWind} mph.`);
+  } else if (maxWind >= 18) {
+    parts.push(`Breezy, up to ${maxWind} mph.`);
+  }
+
+  // Nice day (no rain, no extreme conditions)
+  if (!raining && !periods.length && maxWind < 18) {
+    if (high >= 68) parts.push('Lovely day out there.');
+    else if (high >= 55 && low >= 45) parts.push('Decent day, no complaints.');
+  }
+
+  return parts.join(' ');
+}
+
+function wxIcon(c) {
+  if (c === 0)       return '☀️';
+  if (c <= 2)        return '🌤️';
+  if (c <= 3)        return '☁️';
+  if (c <= 48)       return '🌫️';
+  if (c <= 55)       return '🌦️';
+  if (c <= 67)       return '🌧️';
+  if (c <= 77)       return '❄️';
+  if (c <= 82)       return '🌧️';
+  return '⛈️';
+}
+
+function wxDesc(c) {
+  if (c === 0)  return 'Clear';
+  if (c <= 2)   return 'Partly cloudy';
+  if (c <= 3)   return 'Overcast';
+  if (c <= 48)  return 'Foggy';
+  if (c <= 55)  return 'Drizzle';
+  if (c <= 67)  return 'Rain';
+  if (c <= 77)  return 'Snow';
+  if (c <= 82)  return 'Showers';
+  return 'Thunderstorm';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CITIBIKE  (GBFS, no key required)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadCitibike() {
+  const el      = document.getElementById('bike-body');
+  const labelEl = document.getElementById('bike-label');
+
+  try {
+    const [infoRes, statusRes] = await Promise.all([
+      fetch('https://gbfs.citibikenyc.com/gbfs/en/station_information.json'),
+      fetch('https://gbfs.citibikenyc.com/gbfs/en/station_status.json'),
+    ]);
+    const { data: { stations: infoList } }   = await infoRes.json();
+    const { data: { stations: statusList } } = await statusRes.json();
+
+    const statusMap = Object.fromEntries(statusList.map(s => [s.station_id, s]));
+
+    // Find home station (Dwight St & Dikeman St)
+    const homeInfo = infoList.find(s =>
+      s.name.toLowerCase().includes('dikeman')
+    );
+    if (!homeInfo) { el.innerHTML = '<div class="err">Station not found</div>'; return; }
+
+    const st = statusMap[homeInfo.station_id] ?? {};
+
+    // E-bike count: try both GBFS v2 and v3 formats
+    let eBikes = st.num_ebikes_available ?? 0;
+    if (!eBikes && st.vehicle_types_available) {
+      const ev = st.vehicle_types_available.find(v =>
+        (v.vehicle_type_id ?? '').toLowerCase().includes('elec') ||
+        (v.vehicle_type_id ?? '').toLowerCase().includes('ebike')
+      );
+      eBikes = ev?.count ?? 0;
+    }
+    const classic = Math.max(0, (st.num_bikes_available ?? 0) - eBikes);
+    const docks   = st.num_docks_available ?? 0;
+
+    // ── TO WORK: show available bikes ──────────────────────────────────────
+    if (direction === 'work') {
+      labelEl.textContent = 'Citibike — Dwight & Dikeman';
+      el.innerHTML = `
+        <div class="bike-grid">
+          <div class="bike-stat">
+            <div class="big-num ${colorNum(classic, 4, 1)}">${classic}</div>
+            <div class="stat-label">Classic</div>
+          </div>
+          <div class="bike-stat">
+            <div class="big-num ${colorNum(eBikes, 2, 1)}">⚡${eBikes}</div>
+            <div class="stat-label">E-bikes</div>
+          </div>
+          <div class="bike-stat">
+            <div class="big-num c-muted">${docks}</div>
+            <div class="stat-label">Docks</div>
+          </div>
+        </div>`;
+
+    // ── TO HOME: show available docks ──────────────────────────────────────
+    } else {
+      labelEl.textContent = 'Citibike Docks — near home';
+
+      // Nearby stations sorted by distance
+      const nearby = infoList
+        .filter(s => s.station_id !== homeInfo.station_id)
+        .map(s => ({ ...s, dist: haversine(homeInfo.lat, homeInfo.lon, s.lat, s.lon) }))
+        .filter(s => s.dist < 0.5)
+        .sort((a, b) => a.dist - b.dist)
+        .slice(0, 3)
+        .map(s => ({ ...s, docks: statusMap[s.station_id]?.num_docks_available ?? 0 }));
+
+      const nearbyRows = nearby.map(s => `
+        <div class="dock-row">
+          <div>
+            <div class="dock-name">${s.name}</div>
+            <div class="dock-dist">${Math.round(s.dist * 5280)} ft away</div>
+          </div>
+          <div class="dock-num ${colorNum(s.docks, 4, 1)}">${s.docks}</div>
+        </div>`).join('');
+
+      el.innerHTML = `
+        <div class="dock-list">
+          <div class="dock-row">
+            <div>
+              <div class="dock-name">Dwight & Dikeman <span style="color:var(--muted);font-weight:400">★ primary</span></div>
+              <div class="dock-dist">${classic + eBikes} bike${classic+eBikes!==1?'s':''} available</div>
+            </div>
+            <div class="dock-num ${colorNum(docks, 4, 1)}">${docks}</div>
+          </div>
+          ${nearbyRows}
+        </div>`;
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="err">Citibike data unavailable</div>';
+    console.error('Citibike:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FERRY  (schedule-based, from ferry.nyc South Brooklyn Route)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function loadFerry() {
+  const el      = document.getElementById('ferry-body');
+  const labelEl = document.getElementById('ferry-label');
+
+  const noMore = '<div class="loading" style="padding:6px 0">No more ferries today</div>';
+
+  if (direction === 'work') {
+    labelEl.textContent = 'Ferry — from Atlantic Basin';
+    const deps = nextDeps(FERRY.fromRH, 3);
+
+    if (!deps.length) { el.innerHTML = noMore + ferryFooter(); return; }
+
+    const rows = deps.map(t => {
+      const nm = nowMins();
+      const walkLeave = parseMins(t) - 13;
+      const bikeLeave = parseMins(t) - 4;
+      const missedWalk = nm > walkLeave;
+      const missedBike = nm > bikeLeave;
+
+      let leaveHtml;
+      if (missedBike) {
+        leaveHtml = `<span style="color:var(--muted)">Departed or too late to catch</span>`;
+      } else if (missedWalk) {
+        leaveHtml = `<span style="color:var(--red);font-weight:600">🚲 Bike now</span>`
+          + ` <span style="color:var(--muted)">· walk window was ${formatTime(addMins(t, -13))}</span>`;
+      } else {
+        leaveHtml = `<span style="color:var(--muted)">Leave by </span>`
+          + `<strong>${formatTime(addMins(t, -13))}</strong>`
+          + `<span style="color:var(--muted)"> walk · </span>`
+          + `<strong>${formatTime(addMins(t, -4))}</strong>`
+          + `<span style="color:var(--muted)"> bike</span>`;
+      }
+
+      const cc = countdownClass(t);
+      return `<div class="dep-row">
+        <div class="dep-time ${cc === 'urgent' || cc === 'imminent' ? 'urgent' : ''}">${formatTime(t)}</div>
+        <div class="dep-right">
+          <div class="dep-countdown ${cc}">${countdownLabel(t)}</div>
+          <div class="dep-dest">→ Wall St ~${formatTime(addMins(t, 15))} · 34th ~${formatTime(addMins(t, 40))}</div>
+          <div class="dep-leave">${leaveHtml}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="dep-list">${rows}</div>${ferryFooter()}`;
+
+  } else {
+    labelEl.textContent = 'Ferry — to Atlantic Basin';
+
+    // Wall St departures = 34th St time + 18 min
+    const wallStDeps = nextDeps(FERRY.from34th.map(t => addMins(t, 18)), 3);
+    const pier79Deps = nextDeps(FERRY.from34th, 3);
+
+    const wallRows = wallStDeps.map(t =>
+      depRow(t, `from Wall St · arr Atlantic Basin ~${formatTime(addMins(t, 17))}`)
+    ).join('');
+
+    const pierRows = pier79Deps.map(t =>
+      depRow(t, `from 34th St · arr Atlantic Basin ~${formatTime(addMins(t, 35))}`)
+    ).join('');
+
+    el.innerHTML = `
+      <div class="section-head">Boarding at Wall St / Pier 11</div>
+      <div class="dep-list">${wallRows || noMore}</div>
+      <div class="section-head" style="margin-top:6px">Boarding at 34th St / Pier 79</div>
+      <div class="dep-list">${pierRows || noMore}</div>
+      ${ferryFooter()}`;
+  }
+}
+
+function ferryFooter() {
+  return `<div class="ferry-note">
+    Scheduled times only · Text <strong>2319816</strong> to <strong>332-334-5645</strong> for real-time ·
+    <a href="https://www.ferry.nyc/routes-and-schedules/south-brooklyn/" target="_blank">full schedule</a>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUS  (MTA BusTime SIRI API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadBus() {
+  const el      = document.getElementById('bus-body');
+  const labelEl = document.getElementById('bus-label');
+  const badge   = document.getElementById('bus-badge');
+
+  labelEl.textContent = direction === 'work'
+    ? 'B61 / B57 — from Red Hook'
+    : 'B61 / B57 — from Jay St';
+
+  const stops = BUS_STOPS[direction];
+
+  try {
+    badge.className    = 'badge badge-live';
+    badge.textContent  = 'Live';
+
+    const results = await Promise.all(stops.map(async stop => {
+      const lineRef = encodeURIComponent(`MTA NYCT_${stop.route}`);
+      const url = `https://bustime.mta.info/api/siri/stop-monitoring.json`
+        + `?key=${MTA_KEY}`
+        + `&MonitoringRef=${stop.id}`
+        + `&LineRef=${lineRef}`
+        + `&MaximumStopVisits=3`;
+
+      const r    = await fetch(url);
+      const data = await r.json();
+
+      const visits = data?.Siri?.ServiceDelivery
+        ?.StopMonitoringDelivery?.[0]?.MonitoredStopVisit ?? [];
+
+      const arrivals = visits.map(v => {
+        const call = v.MonitoredVehicleJourney?.MonitoredCall;
+        const raw  = call?.ExpectedArrivalTime || call?.AimedArrivalTime;
+        if (!raw) return null;
+        return Math.round((new Date(raw) - Date.now()) / 60000);
+      }).filter(m => m !== null && m >= -1).slice(0, 3);
+
+      return { route: stop.route, arrivals };
+    }));
+
+    const rows = results.map(({ route, arrivals }) => {
+      const timesHtml = arrivals.length === 0
+        ? '<span class="bus-arrival none">None found</span>'
+        : arrivals.map(m => {
+            const label = m <= 0 ? 'Now' : `${m} min`;
+            return `<span class="bus-arrival ${m <= 5 ? 'soon' : ''}">${label}</span>`;
+          }).join('');
+      return `<div class="bus-row">
+        <div class="bus-pill">${route}</div>
+        <div class="bus-times">${timesHtml}</div>
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div class="bus-list">${rows}</div>`;
+
+  } catch(e) {
+    badge.className   = 'badge badge-error';
+    badge.textContent = 'Error';
+    el.innerHTML = `<div class="err">Bus data unavailable: ${e.message}</div>`;
+    console.error('Bus:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// START
+// ─────────────────────────────────────────────────────────────────────────────
+
+refresh();
+</script>
+</body>
+</html>
