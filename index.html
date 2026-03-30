@@ -449,21 +449,22 @@ const BUS_STOPS = {
 // South Brooklyn Ferry — schedules from ferry.nyc, all times 24h (HH:MM)
 const FERRY = {
   weekday: {
+    // Red Hook/Atlantic Basin departure times (→ work)
     fromRH: [
-      '06:48','07:33','08:18','09:03','09:48','10:33','11:18','12:03',
-      '12:48','13:33','14:18','15:03','15:48','16:33','17:18','18:03',
-      '18:48','19:33','20:18','21:03',
+      '06:40','07:25','08:10','08:55','09:40','10:25','11:10','11:55',
+      '12:40','13:25','14:10','14:55','15:40','16:25','17:10','17:55',
+      '18:31','19:16','20:01','20:46',
     ],
+    // East 34th St departure times (→ home, ferry arrives Red Hook ~36 min later)
     from34th: [
-      '07:22','08:07','08:52','09:39','10:24','11:09','11:54','12:39',
-      '13:24','14:09','14:54','15:39','16:24','17:09','17:54','18:39',
-      '19:54','20:39','21:24',
+      '06:46','07:18','08:03','08:48','09:33','10:18','11:03','11:48',
+      '12:33','13:18','14:03','14:48','15:33','16:18','17:03','17:48',
     ],
-    rhToWallSt:       15,
-    rhTo34th:         38,
-    from34thToWallSt: 18,
-    wallStToRH:       17,
-    from34thToRH:     35,
+    rhToWallSt:       16,
+    rhTo34th:         32,
+    from34thToWallSt: 21,
+    wallStToRH:       15,
+    from34thToRH:     36,
   },
   weekend: {
     // No early service — first boat from Red Hook at 9:20 AM
