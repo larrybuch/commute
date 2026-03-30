@@ -126,6 +126,27 @@
     .loading { color: var(--muted); font-size: 14px; }
     .err     { color: var(--red);   font-size: 13px; }
 
+    /* ── Context banner ── */
+    .ctx-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--blue);
+    }
+
+    .ctx-line {
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 3px 0;
+    }
+
+    .ctx-line + .ctx-line {
+      border-top: 1px solid var(--border);
+      margin-top: 5px;
+      padding-top: 8px;
+    }
+
     /* ── Weather ── */
     .weather-row {
       display: flex;
@@ -356,6 +377,11 @@
     </div>
   </div>
 
+  <!-- Context banner -->
+  <div class="ctx-card">
+    <div id="ctx-body" class="loading">Loading…</div>
+  </div>
+
   <!-- Weather -->
   <div class="card">
     <div class="card-header">
@@ -438,12 +464,28 @@ const FERRY = {
   ],
 };
 
+// Transit times (minutes) — used by ferry cards and context banner
+const HOME_TO_FERRY_WALK    = 13;  // 23 Dikeman → Atlantic Basin
+const HOME_TO_FERRY_BIKE    = 4;
+const HOME_TO_SMITH9_WALK   = 19;  // 23 Dikeman → Smith & 9th St F train
+const OFFICE_TO_PIER79_WALK = 35;  // 620 8th Ave → 34th St / Pier 79
+const OFFICE_TO_PIER79_BIKE = 13;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────────────────────────
 
 let direction = 'work';
 let refreshTimer = null;
+
+// Shared live state — populated by card loaders, consumed by context banner
+const live = {
+  eBikes:      0,
+  classicBikes: 0,
+  homeDocks:   0,
+  isRaining:   false,
+  busArrivals: { B61: [], B57: [] },
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -540,6 +582,7 @@ function setDir(dir) {
 async function refresh() {
   clearTimeout(refreshTimer);
   await Promise.all([loadWeather(), loadCitibike(), loadFerry(), loadBus()]);
+  updateContextBanner();
   const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   document.getElementById('ts').textContent = `Updated ${t}`;
   // Auto-refresh every 60s while page is visible
@@ -575,6 +618,7 @@ async function loadWeather() {
     const code   = c.weather_code;
     const wind   = Math.round(c.wind_speed_10m);
     const isWet  = code >= 51;
+    live.isRaining = isWet;
 
     const sentence = buildDaySentence(c, data.daily, data.hourly);
 
@@ -723,6 +767,10 @@ async function loadCitibike() {
     const classic = Math.max(0, (st.num_bikes_available ?? 0) - eBikes);
     const docks   = st.num_docks_available ?? 0;
 
+    live.eBikes       = eBikes;
+    live.classicBikes = classic;
+    live.homeDocks    = docks;
+
     // ── TO WORK: show available bikes ──────────────────────────────────────
     if (direction === 'work') {
       labelEl.textContent = 'Citibike — Dwight & Dikeman';
@@ -800,8 +848,8 @@ function loadFerry() {
 
     const rows = deps.map(t => {
       const nm = nowMins();
-      const walkLeave = parseMins(t) - 13;
-      const bikeLeave = parseMins(t) - 4;
+      const walkLeave = parseMins(t) - HOME_TO_FERRY_WALK;
+      const bikeLeave = parseMins(t) - HOME_TO_FERRY_BIKE;
       const missedWalk = nm > walkLeave;
       const missedBike = nm > bikeLeave;
 
@@ -906,6 +954,8 @@ async function loadBus() {
       return { route: stop.route, arrivals };
     }));
 
+    results.forEach(({ route, arrivals }) => { live.busArrivals[route] = arrivals; });
+
     const rows = results.map(({ route, arrivals }) => {
       const timesHtml = arrivals.length === 0
         ? '<span class="bus-arrival none">None found</span>'
@@ -931,6 +981,90 @@ async function loadBus() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // START
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTEXT BANNER  (synthesizes live data across all cards)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function updateContextBanner() {
+  const el = document.getElementById('ctx-body');
+  const nm = nowMins();
+  const lines = [];
+
+  if (direction === 'work') {
+
+    // ── Ferry + bike line ─────────────────────────────────────────────────
+    const deps = nextDeps(FERRY.fromRH, 3);
+    // Find next ferry still catchable (by biking at minimum)
+    const nextFerry = deps.find(t => parseMins(t) - nm >= HOME_TO_FERRY_BIKE);
+
+    if (live.isRaining) {
+      const b61 = (live.busArrivals.B61 || []).filter(m => m >= 0)[0];
+      const busStr = b61 != null ? ` B61 in <strong>${b61} min</strong>.` : '';
+      lines.push(`🌧 Raining — skip biking.${busStr} F train: ${HOME_TO_SMITH9_WALK} min walk to Smith & 9th.`);
+    } else if (nextFerry) {
+      const ferryMins  = parseMins(nextFerry) - nm;
+      const canWalk    = ferryMins >= HOME_TO_FERRY_WALK;
+      const leaveWalk  = formatTime(addMins(nextFerry, -HOME_TO_FERRY_WALK));
+      const leaveBike  = formatTime(addMins(nextFerry, -HOME_TO_FERRY_BIKE));
+
+      if (live.eBikes > 0 && canWalk) {
+        lines.push(`⚡ E-bike available — leave by <strong>${leaveBike}</strong> to ride to the ${formatTime(nextFerry)} ferry.`);
+      } else if (live.eBikes > 0) {
+        lines.push(`⚡ E-bike available — bike only, leave by <strong>${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
+      } else if (canWalk) {
+        lines.push(`⛴ ${formatTime(nextFerry)} ferry — leave by <strong>${leaveWalk}</strong> walk or <strong>${leaveBike}</strong> bike.`);
+      } else {
+        lines.push(`⛴ Bike only — leave by <strong>${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
+      }
+    } else {
+      lines.push(`⛴ No more catchable ferries today.`);
+    }
+
+    // ── Bus + F train line ────────────────────────────────────────────────
+    if (!live.isRaining) {
+      const b61 = (live.busArrivals.B61 || []).filter(m => m >= 0)[0];
+      const b57 = (live.busArrivals.B57 || []).filter(m => m >= 0)[0];
+      const busParts = [];
+      if (b61 != null) busParts.push(`B61 in <strong>${b61} min</strong>`);
+      if (b57 != null) busParts.push(`B57 in <strong>${b57} min</strong>`);
+      const busStr = busParts.length ? busParts.join(' · ') + ' · ' : '';
+      lines.push(`🚌 ${busStr}or walk ${HOME_TO_SMITH9_WALK} min to Smith & 9th F train`);
+    }
+
+  } else {
+
+    // ── Ferry from office line ────────────────────────────────────────────
+    const catchable = FERRY.from34th.filter(t => parseMins(t) - nm >= OFFICE_TO_PIER79_BIKE);
+
+    if (!catchable.length) {
+      lines.push(`⛴ No more 34th St ferries catchable today.`);
+    } else {
+      catchable.slice(0, 2).forEach(t => {
+        const canWalk   = parseMins(t) - nm >= OFFICE_TO_PIER79_WALK;
+        const leaveWalk = formatTime(addMins(t, -OFFICE_TO_PIER79_WALK));
+        const leaveBike = formatTime(addMins(t, -OFFICE_TO_PIER79_BIKE));
+        if (canWalk) {
+          lines.push(`⛴ ${formatTime(t)} from 34th St — leave office by <strong>${leaveWalk}</strong> walk · <strong>${leaveBike}</strong> bike`);
+        } else {
+          lines.push(`⛴ ${formatTime(t)} from 34th St — <strong>bike only</strong>, leave office by <strong>${leaveBike}</strong>`);
+        }
+      });
+    }
+
+    // ── Home dock line ────────────────────────────────────────────────────
+    const d = live.homeDocks;
+    if (d >= 4) {
+      lines.push(`🅿 ${d} docks free at Dwight & Dikeman — no problem tonight`);
+    } else if (d >= 1) {
+      lines.push(`⚠️ Only ${d} dock${d === 1 ? '' : 's'} at Dwight & Dikeman — check nearby`);
+    } else if (d === 0) {
+      lines.push(`🚨 No docks at Dwight & Dikeman — park at a nearby station`);
+    }
+  }
+
+  el.innerHTML = lines.map(l => `<div class="ctx-line">${l}</div>`).join('');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 refresh();
