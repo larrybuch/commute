@@ -446,22 +446,44 @@ const BUS_STOPS = {
   ],
 };
 
-// South Brooklyn Ferry — actual weekday schedule from ferry.nyc
-// All times 24h (HH:MM)
+// South Brooklyn Ferry — schedules from ferry.nyc, all times 24h (HH:MM)
 const FERRY = {
-  // Departures from Atlantic Basin heading to Wall St → 34th St
-  fromRH: [
-    '06:48','07:33','08:18','09:03','09:48','10:33','11:18','12:03',
-    '12:48','13:33','14:18','15:03','15:48','16:33','17:18','18:03',
-    '18:48','19:33','20:18','21:03',
-  ],
-  // Departures from 34th St/Pier 79 heading back toward Red Hook
-  // Ferry stops at Wall St ~18 min later, arrives Red Hook ~35 min later
-  from34th: [
-    '07:22','08:07','08:52','09:39','10:24','11:09','11:54','12:39',
-    '13:24','14:09','14:54','15:39','16:24','17:09','17:54','18:39',
-    '19:54','20:39','21:24',
-  ],
+  weekday: {
+    fromRH: [
+      '06:48','07:33','08:18','09:03','09:48','10:33','11:18','12:03',
+      '12:48','13:33','14:18','15:03','15:48','16:33','17:18','18:03',
+      '18:48','19:33','20:18','21:03',
+    ],
+    from34th: [
+      '07:22','08:07','08:52','09:39','10:24','11:09','11:54','12:39',
+      '13:24','14:09','14:54','15:39','16:24','17:09','17:54','18:39',
+      '19:54','20:39','21:24',
+    ],
+    rhToWallSt:       15,
+    rhTo34th:         38,
+    from34thToWallSt: 18,
+    wallStToRH:       17,
+    from34thToRH:     35,
+  },
+  weekend: {
+    // No early service — first boat from Red Hook at 9:20 AM
+    fromRH: [
+      '09:20','10:03','10:47','11:32','12:16','13:00','13:44','14:28',
+      '15:12','15:56','16:40','17:24','17:59','18:43','19:27','20:11',
+    ],
+    from34th: [
+      '09:13','09:57','10:41','11:25','12:09','12:53','13:37','14:21',
+      '15:05','15:49','16:33','17:17','18:01','18:45','19:29','20:13',
+    ],
+    fromWallSt: [
+      '09:33','10:17','11:02','11:46','12:30','13:14','13:58','14:42',
+      '15:26','16:10','16:54','17:38','18:22','19:06','19:50','20:34',
+    ],
+    rhToWallSt:   15,
+    rhTo34th:     31,
+    wallStToRH:   14,
+    from34thToRH: 34,
+  },
 };
 
 // Transit times (minutes) — used by ferry cards and context banner
@@ -490,6 +512,15 @@ const live = {
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
+
+function isWeekend() {
+  const d = new Date().getDay();
+  return d === 0 || d === 6;
+}
+
+function getSchedule() {
+  return isWeekend() ? FERRY.weekend : FERRY.weekday;
+}
 
 function hhmm(h, m) {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
@@ -840,11 +871,23 @@ function loadFerry() {
 
   const noMore = '<div class="loading" style="padding:6px 0">No more ferries today</div>';
 
+  const sch = getSchedule();
+  const weekend = isWeekend();
+
   if (direction === 'work') {
     labelEl.textContent = 'Ferry — from Atlantic Basin';
-    const deps = nextDeps(FERRY.fromRH, 3);
+    const deps = nextDeps(sch.fromRH, 3);
 
-    if (!deps.length) { el.innerHTML = noMore + ferryFooter(); return; }
+    if (!deps.length) {
+      // Helpful message if before first weekend boat
+      const firstBoat = sch.fromRH[0];
+      const tooEarly = weekend && nowMins() < parseMins(firstBoat);
+      const msg = tooEarly
+        ? `<div class="loading" style="padding:6px 0">No early service on weekends — first boat at <strong>${formatTime(firstBoat)}</strong></div>`
+        : noMore;
+      el.innerHTML = msg + ferryFooter();
+      return;
+    }
 
     const rows = deps.map(t => {
       const nm = nowMins();
@@ -858,12 +901,12 @@ function loadFerry() {
         leaveHtml = `<span style="color:var(--muted)">Departed or too late to catch</span>`;
       } else if (missedWalk) {
         leaveHtml = `<span style="color:var(--red);font-weight:600">🚲 Bike now</span>`
-          + ` <span style="color:var(--muted)">· walk window was ${formatTime(addMins(t, -13))}</span>`;
+          + ` <span style="color:var(--muted)">· walk window was ${formatTime(addMins(t, -HOME_TO_FERRY_WALK))}</span>`;
       } else {
         leaveHtml = `<span style="color:var(--muted)">Leave by </span>`
-          + `<strong>${formatTime(addMins(t, -13))}</strong>`
+          + `<strong>${formatTime(addMins(t, -HOME_TO_FERRY_WALK))}</strong>`
           + `<span style="color:var(--muted)"> walk · </span>`
-          + `<strong>${formatTime(addMins(t, -4))}</strong>`
+          + `<strong>${formatTime(addMins(t, -HOME_TO_FERRY_BIKE))}</strong>`
           + `<span style="color:var(--muted)"> bike</span>`;
       }
 
@@ -872,7 +915,7 @@ function loadFerry() {
         <div class="dep-time ${cc === 'urgent' || cc === 'imminent' ? 'urgent' : ''}">${formatTime(t)}</div>
         <div class="dep-right">
           <div class="dep-countdown ${cc}">${countdownLabel(t)}</div>
-          <div class="dep-dest">→ Wall St ~${formatTime(addMins(t, 15))} · 34th ~${formatTime(addMins(t, 40))}</div>
+          <div class="dep-dest">→ Wall St ~${formatTime(addMins(t, sch.rhToWallSt))} · 34th ~${formatTime(addMins(t, sch.rhTo34th))}</div>
           <div class="dep-leave">${leaveHtml}</div>
         </div>
       </div>`;
@@ -883,16 +926,17 @@ function loadFerry() {
   } else {
     labelEl.textContent = 'Ferry — to Atlantic Basin';
 
-    // Wall St departures = 34th St time + 18 min
-    const wallStDeps = nextDeps(FERRY.from34th.map(t => addMins(t, 18)), 3);
-    const pier79Deps = nextDeps(FERRY.from34th, 3);
+    const wallStDeps = weekend
+      ? nextDeps(sch.fromWallSt, 3)
+      : nextDeps(sch.from34th.map(t => addMins(t, sch.from34thToWallSt)), 3);
+    const pier79Deps = nextDeps(sch.from34th, 3);
 
     const wallRows = wallStDeps.map(t =>
-      depRow(t, `from Wall St · arr Atlantic Basin ~${formatTime(addMins(t, 17))}`)
+      depRow(t, `from Wall St · arr Atlantic Basin ~${formatTime(addMins(t, sch.wallStToRH))}`)
     ).join('');
 
     const pierRows = pier79Deps.map(t =>
-      depRow(t, `from 34th St · arr Atlantic Basin ~${formatTime(addMins(t, 35))}`)
+      depRow(t, `from 34th St · arr Atlantic Basin ~${formatTime(addMins(t, sch.from34thToRH))}`)
     ).join('');
 
     el.innerHTML = `
@@ -993,7 +1037,8 @@ function updateContextBanner() {
   if (direction === 'work') {
 
     // ── Ferry + bike line ─────────────────────────────────────────────────
-    const deps = nextDeps(FERRY.fromRH, 3);
+    const sch = getSchedule();
+    const deps = nextDeps(sch.fromRH, 3);
     // Find next ferry still catchable (by biking at minimum)
     const nextFerry = deps.find(t => parseMins(t) - nm >= HOME_TO_FERRY_BIKE);
 
@@ -1017,7 +1062,11 @@ function updateContextBanner() {
         lines.push(`⛴ Bike only — leave by <strong>${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
       }
     } else {
-      lines.push(`⛴ No more catchable ferries today.`);
+      const firstBoat = sch.fromRH[0];
+      const tooEarly = isWeekend() && nm < parseMins(firstBoat);
+      lines.push(tooEarly
+        ? `⛴ No early ferry on weekends — first boat at <strong>${formatTime(firstBoat)}</strong>.`
+        : `⛴ No more catchable ferries today.`);
     }
 
     // ── Bus + F train line ────────────────────────────────────────────────
@@ -1034,7 +1083,8 @@ function updateContextBanner() {
   } else {
 
     // ── Ferry from office line ────────────────────────────────────────────
-    const catchable = FERRY.from34th.filter(t => parseMins(t) - nm >= OFFICE_TO_PIER79_BIKE);
+    const sch = getSchedule();
+    const catchable = sch.from34th.filter(t => parseMins(t) - nm >= OFFICE_TO_PIER79_BIKE);
 
     if (!catchable.length) {
       lines.push(`⛴ No more 34th St ferries catchable today.`);
