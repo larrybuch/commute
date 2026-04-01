@@ -17,16 +17,6 @@
       --red: #ff3b30;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #1c1c1e;
-        --card: #2c2c2e;
-        --text: #f2f2f7;
-        --muted: #8e8e93;
-        --border: #3a3a3c;
-      }
-    }
-
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -116,12 +106,6 @@
     .badge-live   { background: #d1fae5; color: #065f46; }
     .badge-sched  { background: #fef3c7; color: #78350f; }
     .badge-error  { background: #fee2e2; color: #991b1b; }
-
-    @media (prefers-color-scheme: dark) {
-      .badge-live  { background: #064e3b; color: #6ee7b7; }
-      .badge-sched { background: #451a03; color: #fbbf24; }
-      .badge-error { background: #450a0a; color: #fca5a5; }
-    }
 
     .loading { color: var(--muted); font-size: 14px; }
     .err     { color: var(--red);   font-size: 13px; }
