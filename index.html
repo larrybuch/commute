@@ -107,6 +107,8 @@
     .badge-sched  { background: #fef3c7; color: #78350f; }
     .badge-error  { background: #fee2e2; color: #991b1b; }
 
+    .go { color: var(--green); font-weight: 700; }
+
     .loading { color: var(--muted); font-size: 14px; }
     .err     { color: var(--red);   font-size: 13px; }
 
@@ -1065,13 +1067,13 @@ function updateContextBanner() {
       const leaveBike  = formatTime(addMins(nextFerry, -HOME_TO_FERRY_BIKE));
 
       if (live.eBikes > 0 && canWalk) {
-        lines.push(`⚡ E-bike available — leave by <strong>${leaveBike}</strong> to ride to the ${formatTime(nextFerry)} ferry.`);
+        lines.push(`⚡ E-bike available — leave by <strong class="go">${leaveBike}</strong> to ride to the ${formatTime(nextFerry)} ferry.`);
       } else if (live.eBikes > 0) {
-        lines.push(`⚡ E-bike available — bike only, leave by <strong>${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
+        lines.push(`⚡ E-bike available — bike only, leave by <strong class="go">${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
       } else if (canWalk) {
-        lines.push(`⛴ ${formatTime(nextFerry)} ferry — leave by <strong>${leaveWalk}</strong> walk or <strong>${leaveBike}</strong> bike.`);
+        lines.push(`⛴ ${formatTime(nextFerry)} ferry — leave by <strong class="go">${leaveWalk}</strong> walk or <strong class="go">${leaveBike}</strong> bike.`);
       } else {
-        lines.push(`⛴ Bike only — leave by <strong>${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
+        lines.push(`⛴ Bike only — leave by <strong class="go">${leaveBike}</strong> for the ${formatTime(nextFerry)}.`);
       }
     } else {
       const firstBoat = sch.fromRH[0];
@@ -1106,9 +1108,9 @@ function updateContextBanner() {
         const leaveWalk = formatTime(addMins(t, -OFFICE_TO_PIER79_WALK));
         const leaveBike = formatTime(addMins(t, -OFFICE_TO_PIER79_BIKE));
         if (canWalk) {
-          lines.push(`⛴ ${formatTime(t)} from 34th St — leave office by <strong>${leaveWalk}</strong> walk · <strong>${leaveBike}</strong> bike`);
+          lines.push(`⛴ ${formatTime(t)} from 34th St — leave office by <strong class="go">${leaveWalk}</strong> walk · <strong class="go">${leaveBike}</strong> bike`);
         } else {
-          lines.push(`⛴ ${formatTime(t)} from 34th St — <strong>bike only</strong>, leave office by <strong>${leaveBike}</strong>`);
+          lines.push(`⛴ ${formatTime(t)} from 34th St — <strong>bike only</strong>, leave office by <strong class="go">${leaveBike}</strong>`);
         }
       });
     }
@@ -1123,7 +1125,7 @@ function updateContextBanner() {
           const leaveBy = canWalk
             ? formatTime(addMins(sunsetBoatTime, -OFFICE_TO_PIER79_WALK))
             : formatTime(addMins(sunsetBoatTime, -OFFICE_TO_PIER79_BIKE));
-          lines.push(`🌅 ${formatTime(sunsetBoatTime)} from 34th St catches the sunset — leave by <strong>${leaveBy}</strong>`);
+          lines.push(`🌅 ${formatTime(sunsetBoatTime)} from 34th St catches the sunset — leave by <strong class="go">${leaveBy}</strong>`);
         }
       }
     }
