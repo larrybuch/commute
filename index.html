@@ -509,6 +509,7 @@ const live = {
   homeDocks:   0,
   isRaining:   false,
   busArrivals: { B61: [], B57: [] },
+  sunsetMins:  null,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -553,6 +554,18 @@ function nowMins() {
 function nextDeps(schedule, count = 3) {
   const nm = nowMins();
   return schedule.filter(t => parseMins(t) >= nm - 1).slice(0, count);
+}
+
+function findSunsetBoat(schedule, travelMins) {
+  if (!live.sunsetMins) return null;
+  const sm = live.sunsetMins;
+  // prefer a boat where sunset falls during the ride
+  for (const t of schedule) {
+    const dep = parseMins(t);
+    if (dep <= sm && sm <= dep + travelMins) return t;
+  }
+  // fallback: last boat whose arrival is within 20 min of sunset
+  return [...schedule].reverse().find(t => parseMins(t) + travelMins <= sm + 20) || null;
 }
 
 function countdownLabel(timeStr) {
@@ -639,7 +652,7 @@ async function loadWeather() {
       + `?latitude=${HOME_LAT}&longitude=${HOME_LON}`
       + `&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`
       + `&hourly=precipitation_probability,weather_code`
-      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,sunset`
       + `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
       + `&forecast_days=1&timezone=America%2FNew_York`;
     const data = await fetch(url).then(r => r.json());
@@ -653,6 +666,14 @@ async function loadWeather() {
     const isWet  = code >= 51;
     live.isRaining = isWet;
 
+    const sunsetRaw = data.daily.sunset?.[0]; // e.g. "2026-03-31T19:52"
+    let sunsetDisplay = '';
+    if (sunsetRaw) {
+      const sunsetHHMM = sunsetRaw.split('T')[1].slice(0, 5);
+      live.sunsetMins = parseMins(sunsetHHMM);
+      sunsetDisplay = ` · Sunset ${formatTime(sunsetHHMM)}`;
+    }
+
     const sentence = buildDaySentence(c, data.daily, data.hourly);
 
     el.innerHTML = `
@@ -661,7 +682,7 @@ async function loadWeather() {
         <div>
           <div class="wx-temp">${temp}°</div>
           <div class="wx-sub">
-            Feels ${feels}° · ${wxDesc(code)} · ${wind} mph
+            Feels ${feels}° · ${wxDesc(code)} · ${wind} mph${sunsetDisplay}
             ${isWet ? `<br><span class="wx-rain">⚠ Rain: ${precip.toFixed(2)}" current</span>` : ''}
           </div>
         </div>
@@ -928,24 +949,29 @@ function loadFerry() {
   } else {
     labelEl.textContent = 'Ferry — to Atlantic Basin';
 
+    const pier79Deps = nextDeps(sch.from34th, 3);
     const wallStDeps = weekend
       ? nextDeps(sch.fromWallSt, 3)
       : nextDeps(sch.from34th.map(t => addMins(t, sch.from34thToWallSt)), 3);
-    const pier79Deps = nextDeps(sch.from34th, 3);
+
+    const sunsetBoatTime = findSunsetBoat(sch.from34th, sch.from34thToRH);
+
+    const pierRows = pier79Deps.map(t => {
+      const isSunset = t === sunsetBoatTime && live.sunsetMins > nowMins();
+      const dest = `from 34th St · arr Red Hook ~${formatTime(addMins(t, sch.from34thToRH))}`
+        + (isSunset ? ' 🌅' : '');
+      return depRow(t, dest);
+    }).join('');
 
     const wallRows = wallStDeps.map(t =>
-      depRow(t, `from Wall St · arr Atlantic Basin ~${formatTime(addMins(t, sch.wallStToRH))}`)
-    ).join('');
-
-    const pierRows = pier79Deps.map(t =>
-      depRow(t, `from 34th St · arr Atlantic Basin ~${formatTime(addMins(t, sch.from34thToRH))}`)
+      depRow(t, `from Wall St · arr Red Hook ~${formatTime(addMins(t, sch.wallStToRH))}`)
     ).join('');
 
     el.innerHTML = `
-      <div class="section-head">Boarding at Wall St / Pier 11</div>
-      <div class="dep-list">${wallRows || noMore}</div>
-      <div class="section-head" style="margin-top:6px">Boarding at 34th St / Pier 79</div>
+      <div class="section-head">Boarding at 34th St / Pier 79</div>
       <div class="dep-list">${pierRows || noMore}</div>
+      <div class="section-head" style="margin-top:6px">Boarding at Wall St / Pier 11</div>
+      <div class="dep-list">${wallRows || noMore}</div>
       ${ferryFooter()}`;
   }
 }
@@ -1103,6 +1129,21 @@ function updateContextBanner() {
       });
     }
 
+    // ── Sunset cruise tip ─────────────────────────────────────────────────
+    if (live.sunsetMins && nm < live.sunsetMins) {
+      const sunsetBoatTime = findSunsetBoat(sch.from34th, sch.from34thToRH);
+      if (sunsetBoatTime) {
+        const boatMins = parseMins(sunsetBoatTime) - nm;
+        if (boatMins >= OFFICE_TO_PIER79_BIKE) {
+          const canWalk = boatMins >= OFFICE_TO_PIER79_WALK;
+          const leaveBy = canWalk
+            ? formatTime(addMins(sunsetBoatTime, -OFFICE_TO_PIER79_WALK))
+            : formatTime(addMins(sunsetBoatTime, -OFFICE_TO_PIER79_BIKE));
+          lines.push(`🌅 ${formatTime(sunsetBoatTime)} from 34th St catches the sunset — leave by <strong>${leaveBy}</strong>`);
+        }
+      }
+    }
+
     // ── Home dock line ────────────────────────────────────────────────────
     const d = live.homeDocks;
     if (d >= 4) {
@@ -1119,6 +1160,11 @@ function updateContextBanner() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Auto-mode: default to home after 3 PM
+const initDir = new Date().getHours() >= 15 ? 'home' : 'work';
+direction = initDir;
+document.getElementById('btn-work').classList.toggle('active', initDir === 'work');
+document.getElementById('btn-home').classList.toggle('active', initDir === 'home');
 refresh();
 </script>
 </body>
