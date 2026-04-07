@@ -870,32 +870,43 @@ document.head.appendChild(tickerStyle);
 
 async function loadWeather() {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast`
-      + `?latitude=${HOME_LAT}&longitude=${HOME_LON}`
-      + `&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`
-      + `&hourly=precipitation_probability`
-      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunset`
-      + `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
-      + `&forecast_days=1&timezone=America%2FNew_York`;
-    const data = await fetch(url).then(r => r.json());
-    const c = data.current;
+    const [hourlyData, dailyData] = await Promise.all([
+      fetch('https://api.weather.gov/gridpoints/OKX/33,33/forecast/hourly').then(r => r.json()),
+      fetch('https://api.weather.gov/gridpoints/OKX/33,33/forecast').then(r => r.json()),
+    ]);
 
-    const temp     = Math.round(c.temperature_2m);
-    const feels    = Math.round(c.apparent_temperature);
-    const code     = c.weather_code;
-    const wind     = Math.round(c.wind_speed_10m);
-    const rainPct  = data.daily.precipitation_probability_max?.[0] ?? 0;
+    const hourly  = hourlyData.properties.periods;
+    const periods = dailyData.properties.periods;
 
-    const sunsetRaw = data.daily.sunset?.[0];
-    const sunsetFmt = sunsetRaw ? fmt12(sunsetRaw.slice(11, 16)) : '--';
+    const cur      = hourly[0];
+    const temp     = cur.temperature;
+    const shortFc  = cur.shortForecast;
+    const code     = nwsCode(shortFc);
+    const windRaw  = cur.windSpeed;
+    const wind     = parseInt(windRaw.match(/(\d+)\s*mph$/)?.[1] ?? windRaw) || 0;
+    const rainPct  = Math.max(...hourly.slice(0, 16).map(p => p.probabilityOfPrecipitation?.value ?? 0));
 
-    document.getElementById('wx-icon').textContent  = wxIcon(code);
-    document.getElementById('wx-temp').textContent  = `${temp}°`;
-    document.getElementById('wx-detail').innerHTML  =
-      `Feels ${feels}°<br>${wxDesc(code)} · ${wind} mph`;
+    const dayPeriod   = periods.find(p => p.isDaytime)  ?? periods[0];
+    const nightPeriod = periods.find(p => !p.isDaytime) ?? periods[1];
+    const high     = dayPeriod.temperature;
+    const low      = nightPeriod.temperature;
+    const windMaxR = dayPeriod.windSpeed;
+    const windMax  = parseInt(windMaxR.match(/(\d+)\s*mph$/)?.[1] ?? windMaxR) || 0;
+
+    let sunsetFmt = '--';
+    try {
+      const sun = await fetch(
+        `https://api.sunrise-sunset.org/json?lat=${HOME_LAT}&lng=${HOME_LON}&formatted=0&tzid=America/New_York`
+      ).then(r => r.json());
+      sunsetFmt = fmt12(sun.results.sunset.slice(11, 16));
+    } catch (_) {}
+
+    document.getElementById('wx-icon').textContent     = wxIcon(code);
+    document.getElementById('wx-temp').textContent     = `${temp}°`;
+    document.getElementById('wx-detail').innerHTML     = `${shortFc}<br>${wind} mph`;
     document.getElementById('wx-rain-pct').textContent = `${rainPct}%`;
     document.getElementById('wx-sentence').textContent =
-      buildDaySentence(c, data.daily, data.hourly);
+      buildDaySentence(hourly, high, low, windMax, rainPct);
     document.getElementById('wx-sunset').textContent   = sunsetFmt;
   } catch (e) {
     document.getElementById('wx-sentence').textContent = 'Weather unavailable';
@@ -903,55 +914,60 @@ async function loadWeather() {
   }
 }
 
-function buildDaySentence(current, daily, hourly) {
-  const high    = Math.round(daily.temperature_2m_max[0]);
-  const low     = Math.round(daily.temperature_2m_min[0]);
-  const maxWind = Math.round(daily.wind_speed_10m_max[0]);
+function buildDaySentence(hourly, high, low, windMax, rainPct) {
   const nowHour = new Date().getHours();
-
-  const precipByHour = {};
-  (hourly.time || []).forEach((t, i) => {
-    const h = parseInt(t.split('T')[1], 10);
-    if (h >= nowHour) precipByHour[h] = hourly.precipitation_probability[i];
-  });
-
   const THRESH  = 45;
-  const hasRain = (start, end) =>
-    Array.from({ length: end - start }, (_, i) => start + i)
-      .some(h => (precipByHour[h] ?? 0) >= THRESH);
 
+  const hasRain = (start, end) =>
+    hourly.some(p => {
+      const h = new Date(p.startTime).getHours();
+      return h >= start && h < end && (p.probabilityOfPrecipitation?.value ?? 0) >= THRESH;
+    });
+
+  const raining       = (hourly[0].probabilityOfPrecipitation?.value ?? 0) >= THRESH;
   const morningRain   = hasRain(6,  12);
   const afternoonRain = hasRain(12, 17);
   const eveningRain   = hasRain(17, 22);
-  const raining       = current.weather_code >= 51;
   const parts         = [];
 
   parts.push(`High ${high}°, low ${low}°.`);
 
-  const periods = [morningRain && 'morning', afternoonRain && 'afternoon', eveningRain && 'evening'].filter(Boolean);
-  if (raining && periods.length) {
+  const rainPeriods = [morningRain && 'morning', afternoonRain && 'afternoon', eveningRain && 'evening'].filter(Boolean);
+  if (raining && rainPeriods.length) {
     parts.push('Rainy all day — pack an umbrella.');
   } else if (raining) {
     parts.push('Raining now, expected to clear.');
-  } else if (periods.length === 3) {
+  } else if (rainPeriods.length === 3) {
     parts.push('Rain throughout the day — umbrella recommended.');
-  } else if (periods.length) {
-    const when = periods.length === 2 ? `${periods[0]} and ${periods[1]}` : periods[0];
+  } else if (rainPeriods.length) {
+    const when = rainPeriods.length === 2 ? `${rainPeriods[0]} and ${rainPeriods[1]}` : rainPeriods[0];
     parts.push(`Rain expected this ${when} — pack an umbrella.`);
   }
 
-  if (low <= 28)            parts.push('Freezing temps tonight.');
-  else if (high <= 35)      parts.push('Stays cold all day — bundle up.');
+  if (low <= 28)           parts.push('Freezing temps tonight.');
+  else if (high <= 35)     parts.push('Stays cold all day — bundle up.');
 
-  if (maxWind >= 25)        parts.push(`Very windy, up to ${maxWind} mph.`);
-  else if (maxWind >= 18)   parts.push(`Breezy, up to ${maxWind} mph.`);
+  if (windMax >= 25)       parts.push(`Very windy, up to ${windMax} mph.`);
+  else if (windMax >= 18)  parts.push(`Breezy, up to ${windMax} mph.`);
 
-  if (!raining && !periods.length && maxWind < 18) {
-    if (high >= 68)              parts.push('Lovely day out there.');
+  if (!raining && !rainPeriods.length && windMax < 18) {
+    if (high >= 68)                  parts.push('Lovely day out there.');
     else if (high >= 55 && low >= 45) parts.push('Decent day, no complaints.');
   }
 
   return parts.join(' ');
+}
+
+function nwsCode(text) {
+  const t = text.toLowerCase();
+  if (t.includes('thunder'))                              return 95;
+  if (t.includes('snow') || t.includes('blizzard') || t.includes('sleet')) return 73;
+  if (t.includes('rain shower') || t.includes('showers')) return 82;
+  if (t.includes('rain') || t.includes('drizzle'))        return 61;
+  if (t.includes('fog'))                                  return 45;
+  if (t.includes('overcast') || (t.includes('cloudy') && !t.includes('partly') && !t.includes('mostly'))) return 3;
+  if (t.includes('mostly cloudy') || t.includes('partly cloudy') || t.includes('partly sunny') || t.includes('mostly sunny')) return 2;
+  return 0; // sunny / clear
 }
 
 function wxDesc(c) {
