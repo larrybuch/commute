@@ -7,12 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
-    /* ── Departure board palette ─────────────────────────────────────────── */
+    /* ── Palette ─────────────────────────────────────────────────────────── */
     :root {
       --bg:     #1c1a18;
       --panel:  #201e1b;
       --border: #332e24;
-      --dim:    #262420;
       --text:   #e8d5a0;
       --muted:  #7a6e50;
       --green:  #4cd964;
@@ -30,16 +29,16 @@
       overflow: hidden;
       background: var(--bg);
       color: var(--text);
-      font-family: 'Share Tech Mono', 'Courier New', 'Lucida Console', monospace;
+      font-family: 'Share Tech Mono', 'Courier New', monospace;
       text-transform: uppercase;
       letter-spacing: 0.06em;
       -webkit-font-smoothing: auto;
     }
 
-    /* ── Page layout ─────────────────────────────────────────────────────── */
+    /* ── Layout ──────────────────────────────────────────────────────────── */
     .layout {
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto auto 1fr auto auto;
       height: 100vh;
     }
 
@@ -48,7 +47,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 24px;
+      padding: 10px 28px;
       border-top: 1px solid var(--amber);
       border-bottom: 2px solid var(--amber);
       gap: 20px;
@@ -57,21 +56,19 @@
     .hd-left { flex: 1; }
 
     .hd-title {
-      font-size: 15px;
-      font-weight: 400;
-      letter-spacing: 0.15em;
+      font-size: 16px;
+      letter-spacing: 0.18em;
     }
 
     .hd-sub {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--muted);
-      margin-top: 2px;
+      margin-top: 3px;
       letter-spacing: 0.1em;
     }
 
     .clock {
-      font-size: 46px;
-      font-weight: 400;
+      font-size: 56px;
       letter-spacing: 0.05em;
       line-height: 1;
       font-variant-numeric: tabular-nums;
@@ -81,18 +78,17 @@
     .hd-right {
       flex: 1;
       text-align: right;
-      font-size: 10px;
+      font-size: 11px;
       color: var(--muted);
-      letter-spacing: 0.08em;
     }
 
-    .live-cursor {
+    .live-dot {
       display: inline-block;
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--green);
-      margin-right: 5px;
+      margin-right: 6px;
       vertical-align: middle;
       animation: blink 1s step-end infinite;
     }
@@ -102,10 +98,72 @@
       50%       { opacity: 0; }
     }
 
+    /* ── Weather strip ───────────────────────────────────────────────────── */
+    .weather-strip {
+      display: flex;
+      align-items: center;
+      padding: 10px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+      gap: 24px;
+      flex-shrink: 0;
+    }
+
+    .wx-temp-big {
+      font-size: 52px;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .wx-detail {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.7;
+      flex-shrink: 0;
+    }
+
+    .wx-divider {
+      width: 1px;
+      height: 36px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .wx-rain-block {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .wx-rain-pct {
+      font-size: 38px;
+      color: var(--blue);
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .wx-rain-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .wx-sentence {
+      flex: 1;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      line-height: 1.6;
+      padding-left: 20px;
+      border-left: 1px solid var(--border);
+    }
+
     /* ── Three-column grid ───────────────────────────────────────────────── */
     .panels {
       display: grid;
-      grid-template-columns: 2fr 1.4fr 1.6fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 1px;
       background: var(--border);
       overflow: hidden;
@@ -114,210 +172,179 @@
 
     .panel {
       background: var(--panel);
-      padding: 18px 24px 16px;
+      padding: 22px 30px 20px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
     .panel-label {
-      font-size: 10px;
-      font-weight: 400;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
+      font-size: 11px;
+      letter-spacing: 0.15em;
       color: var(--amber);
-      margin-bottom: 14px;
+      margin-bottom: 3px;
+      flex-shrink: 0;
+    }
+
+    .panel-sublabel {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
       flex-shrink: 0;
     }
 
     /* ── Bus panel ───────────────────────────────────────────────────────── */
-    #bus-routes {
+    #f-panel, #ac-panel {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-around;
+      min-height: 0;
     }
 
-    .bus-row {
+    .bus-primary {
+      flex: 1;
       display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--border);
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 16px;
+      min-height: 0;
     }
-
-    .bus-row:first-child { padding-top: 0; }
-    .bus-row:last-child  { border-bottom: none; padding-bottom: 0; }
 
     .bus-pill {
-      font-size: 12px;
-      font-weight: 400;
-      padding: 4px 8px;
+      font-size: 15px;
+      padding: 5px 16px;
       border-radius: 0;
-      min-width: 46px;
-      text-align: center;
-      flex-shrink: 0;
-      letter-spacing: 0.1em;
       border: 1px solid currentColor;
+      display: inline-block;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+      align-self: flex-start;
     }
 
-    .pill-b61 { background: #0a1928; color: var(--blue);  border-color: var(--blue); }
-    .pill-b57 { background: #0d2010; color: var(--green); border-color: var(--green); }
+    .pill-b61    { background: #0a1928; color: var(--blue);  border-color: var(--blue); }
+    .pill-b57    { background: #0d2010; color: var(--green); border-color: var(--green); }
+    .pill-ferry  { background: #1a1000; color: var(--amber); border-color: var(--amber); }
 
-    .bus-info { flex: 1; min-width: 0; }
-
-    .bus-dest {
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 1px;
-    }
-
-    .bus-stop {
-      font-size: 10px;
-      color: var(--amber);
-      opacity: 0.7;
-      margin-bottom: 3px;
-      letter-spacing: 0.08em;
-    }
-
-    .bus-arrivals {
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-      flex-wrap: nowrap;
-      overflow: hidden;
-    }
-
-    .arrival-big {
-      font-size: 36px;
-      font-weight: 400;
-      letter-spacing: 0.02em;
-      line-height: 1;
+    .primary-num {
+      font-size: 112px;
+      line-height: 0.85;
       font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
     }
 
-    .arrival-unit {
-      font-size: 14px;
+    .primary-unit {
+      font-size: 30px;
       color: var(--muted);
-      font-weight: 400;
+      margin-left: 8px;
     }
 
-    .arrival-more {
-      font-size: 12px;
-      color: var(--muted);
-      margin-left: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .primary-now {
+      font-size: 80px;
+      line-height: 0.9;
     }
 
-    .c-green  { color: var(--green); }
-    .c-yellow { color: var(--yellow); }
-    .c-red    { color: var(--red); }
-    .c-muted  { color: var(--muted); }
-
-    /* ── Citibike panel ──────────────────────────────────────────────────── */
-    #bike-stats {
-      flex: 1;
+    .upcoming-list {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+      margin-top: 16px;
       display: flex;
       flex-direction: column;
-      justify-content: space-around;
+      gap: 11px;
+      flex-shrink: 0;
     }
 
-    .bike-stat {
+    .upcoming-row {
       display: flex;
-      flex-direction: row;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      background: transparent;
+      gap: 14px;
     }
 
-    .bike-stat.full-width {
-      border-bottom: none;
+    .upcoming-pill {
+      font-size: 13px;
+      padding: 3px 10px;
+      border-radius: 0;
+      border: 1px solid currentColor;
+      display: inline-block;
+      letter-spacing: 0.08em;
+      flex-shrink: 0;
     }
 
-    .stat-num {
-      font-size: 42px;
-      font-weight: 400;
-      letter-spacing: 0.03em;
-      line-height: 1;
+    .upcoming-mins {
+      font-size: 30px;
       font-variant-numeric: tabular-nums;
     }
 
-    .stat-num.docks {
-      font-size: 42px;
+    .upcoming-unit {
+      font-size: 13px;
+      color: var(--muted);
     }
 
-    .stat-label {
-      font-size: 11px;
-      font-weight: 400;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
+    .ferry-dep-label {
+      font-size: 20px;
       color: var(--muted);
-      margin-top: 0;
+      margin-top: 6px;
+      letter-spacing: 0.04em;
     }
+
+    .ferry-time-small {
+      font-size: 17px;
+      color: var(--muted);
+      min-width: 90px;
+      flex-shrink: 0;
+    }
+
+    .leave-by {
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.7;
+      flex-shrink: 0;
+      letter-spacing: 0.06em;
+    }
+
+    .leave-by b { color: var(--text); }
+    .leave-by .missed { color: var(--red); }
 
     /* ── Ferry panel ─────────────────────────────────────────────────────── */
     #ferry-rows {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-around;
+      min-height: 0;
     }
 
-    .ferry-row {
-      padding: 8px 0;
+    .ferry-tmr-hdr {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--border);
-    }
-
-    .ferry-row:first-child { padding-top: 0; }
-    .ferry-row:last-child  { border-bottom: none; padding-bottom: 0; }
-
-    .ferry-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      flex-wrap: nowrap;
-      gap: 8px;
-    }
-
-    .ferry-time {
-      font-size: 26px;
-      font-weight: 400;
-      letter-spacing: 0.04em;
-      line-height: 1;
       flex-shrink: 0;
     }
 
-    .ferry-time.urgent { color: var(--red); }
-
-    .ferry-cd {
-      font-size: 13px;
-      font-weight: 400;
+    /* ── Citibike bar ────────────────────────────────────────────────────── */
+    .bike-bar {
+      border-top: 1px solid var(--border);
+      padding: 7px 28px;
+      font-size: 11px;
       color: var(--muted);
-      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      flex-shrink: 0;
+      letter-spacing: 0.08em;
     }
 
-    .ferry-cd.warn  { color: var(--yellow); }
-    .ferry-cd.hot   { color: var(--red); }
-    .ferry-cd.ready { color: var(--green); }
-
-    .ferry-leave {
-      font-size: 11.5px;
-      color: var(--muted);
-      margin-top: 4px;
-      line-height: 1.4;
-    }
-
-    .ferry-leave b { color: var(--text); font-weight: 600; }
-    .ferry-leave .missed { color: var(--red); }
+    .bike-bar-label { color: var(--amber); }
+    .bike-val { color: var(--text); }
 
     /* ── Ticker ──────────────────────────────────────────────────────────── */
     .ticker-bar {
-      border-top: 2px solid var(--text);
-      padding: 0;
+      border-top: 2px solid var(--amber);
       height: 32px;
       overflow: hidden;
       display: flex;
@@ -336,7 +363,6 @@
       padding: 0 28px;
       flex-shrink: 0;
       letter-spacing: 0.1em;
-      text-transform: uppercase;
     }
 
     .ticker-item b { color: var(--text); }
@@ -346,18 +372,15 @@
       padding: 0 4px;
     }
 
+    /* ── Colors ──────────────────────────────────────────────────────────── */
+    .c-green  { color: var(--green); }
+    .c-yellow { color: var(--yellow); }
+    .c-red    { color: var(--red); }
+    .c-muted  { color: var(--muted); }
+
     /* ── Utility ─────────────────────────────────────────────────────────── */
     .loading { color: var(--muted); font-size: 13px; }
     .err     { color: var(--red);   font-size: 12px; }
-
-    .ferry-tmr-hdr {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      margin-bottom: 10px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-    }
   </style>
 </head>
 <body>
@@ -371,32 +394,54 @@
     </div>
     <div class="clock" id="clock">--:--</div>
     <div class="hd-right">
-      <span class="live-cursor" id="live-dot"></span>
+      <span class="live-dot" id="live-dot"></span>
       <span id="status-text">Loading…</span>
     </div>
   </header>
 
+  <!-- ── Weather strip ── -->
+  <div class="weather-strip">
+    <div class="wx-temp-big" id="wx-temp">--°</div>
+    <div class="wx-detail" id="wx-detail"></div>
+    <div class="wx-divider"></div>
+    <div class="wx-rain-block">
+      <span class="wx-rain-pct" id="wx-rain-pct">--%</span>
+      <span class="wx-rain-label">Rain</span>
+    </div>
+    <div class="wx-divider"></div>
+    <div class="wx-sentence" id="wx-sentence">Loading…</div>
+  </div>
+
   <!-- ── Panels ── -->
   <div class="panels">
 
-    <!-- Bus -->
+    <!-- F Train Bus -->
     <div class="panel">
-      <div class="panel-label">Buses from Red Hook</div>
-      <div id="bus-routes"><div class="loading">Loading…</div></div>
+      <div class="panel-label">Next Bus · F Train</div>
+      <div class="panel-sublabel">Otsego & Creamer</div>
+      <div id="f-panel"><div class="loading">Loading…</div></div>
     </div>
 
-    <!-- Citibike -->
+    <!-- A/C Train Bus -->
     <div class="panel">
-      <div class="panel-label">Citibike · Dwight & Dikeman</div>
-      <div id="bike-stats"><div class="loading">Loading…</div></div>
+      <div class="panel-label">Next Bus · A/C Train</div>
+      <div class="panel-sublabel">Van Brunt & Dikeman</div>
+      <div id="ac-panel"><div class="loading">Loading…</div></div>
     </div>
 
     <!-- Ferry -->
     <div class="panel">
-      <div class="panel-label">Ferry · Atlantic Basin → Manhattan</div>
+      <div class="panel-label">Next Boat · Manhattan</div>
+      <div class="panel-sublabel">Atlantic Basin</div>
       <div id="ferry-rows"><div class="loading">Loading…</div></div>
     </div>
 
+  </div>
+
+  <!-- ── Citibike bar ── -->
+  <div class="bike-bar">
+    <span class="bike-bar-label">Citibike · Dwight & Dikeman</span>
+    <span id="bike-inline"><span class="loading">Loading…</span></span>
   </div>
 
   <!-- ── Ticker ── -->
@@ -409,30 +454,19 @@
 </div>
 <script>
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFIG — edit these if stop IDs or times need updating
+// CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MTA_KEY  = '47d976ac-47a9-4009-816a-a39448f4866e';
 const HOME_LAT = 40.6760;
 const HOME_LON = -74.0115;
 
-// Simulation override — set SIM_TIME to a "HH:MM" string to freeze the clock,
-// and SIM_WEEKEND to true/false to force day type. Set both to null for live mode.
+// Simulation override — set SIM_TIME to "HH:MM" and SIM_WEEKEND to true/false
+// to freeze the dashboard for testing. Set both to null for live mode.
 const SIM_TIME    = null;
 const SIM_WEEKEND = null;
 
-// Three outbound bus routes from Red Hook.
-// Stop IDs verified via MTA BusTime stops-for-location API.
-// NOTE: B61 → A/C uses Lorraine/Columbia (E direction). If results look wrong,
-// swap MTA_306087 for MTA_306088 (Lorraine/Hicks, also E).
-const BUSES = [
-  { route: 'B57', id: 'MTA_901797', dest: '→ F train',   note: 'Otsego/Creamer'    },
-  { route: 'B61', id: 'MTA_901797', dest: '→ F train',   note: 'Otsego/Creamer'    },
-  { route: 'B61', id: 'MTA_305096', dest: '→ A/C train', note: 'Van Brunt/Dikeman' },
-];
-
 // NYC Ferry — South Brooklyn Route, from ferry.nyc
-// fromRH = departures from Atlantic Basin (Red Hook)
 const FERRY = {
   weekday: {
     fromRH: [
@@ -453,9 +487,11 @@ const FERRY = {
   },
 };
 
-// Walk/bike times from home (23 Dikeman St) to Atlantic Basin ferry terminal
-const WALK_TO_FERRY = 13;  // minutes
-const BIKE_TO_FERRY = 4;
+// Walk times from 23 Dikeman St
+const WALK_TO_F_STOP  = 1;   // Otsego & Creamer
+const WALK_TO_AC_STOP = 3;   // Van Brunt & Dikeman
+const WALK_TO_FERRY   = 13;  // Atlantic Basin ferry terminal
+const BIKE_TO_FERRY   = 4;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -500,6 +536,11 @@ function tomorrowSchedule() {
   return { sch: tmWeekend ? FERRY.weekend : FERRY.weekday, isWeekend: tmWeekend };
 }
 
+function nowStr() {
+  const nm = nowMins();
+  return `${String(Math.floor(nm / 60)).padStart(2,'0')}:${String(nm % 60).padStart(2,'0')}`;
+}
+
 function numColor(n, good, warn) {
   if (n >= good) return 'c-green';
   if (n >= warn) return 'c-yellow';
@@ -516,7 +557,6 @@ function tickClock() {
   const m = String(n.getMinutes()).padStart(2, '0');
   document.getElementById('clock').textContent = `${h}:${m}`;
 }
-
 setInterval(tickClock, 1000);
 tickClock();
 
@@ -524,68 +564,96 @@ tickClock();
 // BUS  (MTA BusTime SIRI API)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Shared state for the ticker
-const busState = {};  // key: route+dest → arrivals[]
+async function fetchArrivals(route, stopId) {
+  const lineRef = encodeURIComponent(`MTA NYCT_${route}`);
+  const url = `https://bustime.mta.info/api/siri/stop-monitoring.json`
+    + `?key=${MTA_KEY}&MonitoringRef=${stopId}&LineRef=${lineRef}&MaximumStopVisits=4`;
+  const data = await fetch(url).then(r => r.json());
+  const visits = data?.Siri?.ServiceDelivery?.StopMonitoringDelivery?.[0]?.MonitoredStopVisit ?? [];
+  return visits.map(v => {
+    const call = v.MonitoredVehicleJourney?.MonitoredCall;
+    const raw  = call?.ExpectedArrivalTime || call?.AimedArrivalTime;
+    return raw ? Math.round((new Date(raw) - Date.now()) / 60000) : null;
+  }).filter(m => m !== null && m >= -1).slice(0, 4);
+}
 
-async function loadBus() {
+function renderBusPanel(elId, items, walkMins) {
+  const el = document.getElementById(elId);
+  if (!items.length) {
+    el.innerHTML = `<div class="bus-primary"><div class="loading">No service data</div></div>`;
+    return;
+  }
+
+  const [first, ...rest] = items;
+  const pillCls = first.route === 'B57' ? 'pill-b57' : 'pill-b61';
+  const isNow   = first.mins <= 0;
+  const bigCls  = isNow ? 'c-red' : first.mins <= 4 ? 'c-yellow' : 'c-green';
+
+  const numHtml = isNow
+    ? `<div class="primary-num primary-now c-red">Now</div>`
+    : `<div class="primary-num ${bigCls}">${first.mins}<span class="primary-unit">min</span></div>`;
+
+  const upcomingHtml = rest.length ? `
+    <div class="upcoming-list">
+      ${rest.slice(0, 3).map(({ route, mins }) => {
+        const cls = route === 'B57' ? 'pill-b57 upcoming-pill' : 'pill-b61 upcoming-pill';
+        const mc  = mins <= 0 ? 'c-red' : mins <= 4 ? 'c-yellow' : 'c-muted';
+        const lbl = mins <= 0 ? 'Now' : mins;
+        const unit = mins > 0 ? `<span class="upcoming-unit"> min</span>` : '';
+        return `<div class="upcoming-row">
+          <span class="${cls}">${route}</span>
+          <span class="upcoming-mins ${mc}">${lbl}${unit}</span>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  const leaveInMins = first.mins - walkMins;
+  let leaveByHtml;
+  if (isNow || leaveInMins <= 0) {
+    leaveByHtml = `<div class="leave-by"><span class="missed">Leave now!</span> (${walkMins} min walk)</div>`;
+  } else {
+    leaveByHtml = `<div class="leave-by">Leave by <b>${fmt12(addMins(nowStr(), leaveInMins))}</b> · ${walkMins} min walk</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="bus-primary">
+      <div class="bus-pill ${pillCls}">${first.route}</div>
+      ${numHtml}
+    </div>
+    ${upcomingHtml}
+    ${leaveByHtml}`;
+}
+
+// Shared state for ticker
+const busTickerState = { f: [], ac: [] };
+
+async function loadFBus() {
   try {
-    const results = await Promise.all(BUSES.map(async (stop) => {
-      const lineRef = encodeURIComponent(`MTA NYCT_${stop.route}`);
-      const url = `https://bustime.mta.info/api/siri/stop-monitoring.json`
-        + `?key=${MTA_KEY}`
-        + `&MonitoringRef=${stop.id}`
-        + `&LineRef=${lineRef}`
-        + `&MaximumStopVisits=4`;
-
-      const data = await fetch(url).then(r => r.json());
-      const visits = data?.Siri?.ServiceDelivery
-        ?.StopMonitoringDelivery?.[0]?.MonitoredStopVisit ?? [];
-
-      const arrivals = visits.map(v => {
-        const call = v.MonitoredVehicleJourney?.MonitoredCall;
-        const raw  = call?.ExpectedArrivalTime || call?.AimedArrivalTime;
-        return raw ? Math.round((new Date(raw) - Date.now()) / 60000) : null;
-      }).filter(m => m !== null && m >= -1).slice(0, 3);
-
-      return { ...stop, arrivals };
-    }));
-
-    const rows = results.map(({ route, dest, note, arrivals }) => {
-      busState[route + dest] = arrivals;
-
-      const pillCls = route === 'B61' ? 'pill-b61' : 'pill-b57';
-
-      let arrHtml;
-      if (!arrivals.length) {
-        arrHtml = `<span class="arrival-big c-muted" style="font-size:28px">—</span>`;
-      } else {
-        const [first, ...rest] = arrivals;
-        const bigCls = first <= 0 ? 'c-red' : first <= 4 ? 'c-yellow' : '';
-        const unit   = first > 0 ? `<span class="arrival-unit"> min</span>` : '';
-        const label  = first <= 0 ? 'Now' : String(first);
-        const more   = rest.length
-          ? `<span class="arrival-more">· ${rest.map(m => m <= 0 ? 'Now' : m + ' min').join(' · ')}</span>`
-          : '';
-        arrHtml = `<span class="arrival-big ${bigCls}">${label}</span>${unit}${more}`;
-      }
-
-      const noteHtml = note ? `<div class="bus-stop">${note}</div>` : '';
-
-      return `<div class="bus-row">
-        <div class="bus-pill ${pillCls}">${route}</div>
-        <div class="bus-info">
-          <div class="bus-dest">${dest}</div>
-          ${noteHtml}
-          <div class="bus-arrivals">${arrHtml}</div>
-        </div>
-      </div>`;
-    }).join('');
-
-    document.getElementById('bus-routes').innerHTML = rows;
+    const [b57, b61] = await Promise.all([
+      fetchArrivals('B57', 'MTA_901797'),
+      fetchArrivals('B61', 'MTA_901797'),
+    ]);
+    const merged = [
+      ...b57.map(m => ({ route: 'B57', mins: m })),
+      ...b61.map(m => ({ route: 'B61', mins: m })),
+    ].sort((a, b) => a.mins - b.mins).slice(0, 5);
+    busTickerState.f = merged;
+    renderBusPanel('f-panel', merged, WALK_TO_F_STOP);
   } catch (e) {
-    document.getElementById('bus-routes').innerHTML =
-      `<div class="err">Bus data unavailable</div>`;
-    console.error('Bus:', e);
+    document.getElementById('f-panel').innerHTML = `<div class="err">Bus data unavailable</div>`;
+    console.error('F bus:', e);
+  }
+}
+
+async function loadACBus() {
+  try {
+    const arrivals = await fetchArrivals('B61', 'MTA_305096');
+    const items    = arrivals.map(m => ({ route: 'B61', mins: m }));
+    busTickerState.ac = items;
+    renderBusPanel('ac-panel', items, WALK_TO_AC_STOP);
+  } catch (e) {
+    document.getElementById('ac-panel').innerHTML = `<div class="err">Bus data unavailable</div>`;
+    console.error('AC bus:', e);
   }
 }
 
@@ -609,8 +677,6 @@ async function loadCitibike() {
     if (!home) throw new Error('Station not found');
 
     const st = statusMap[home.station_id] ?? {};
-
-    // Support GBFS v2 (num_ebikes_available) and v3 (vehicle_types_available)
     let eBikes = st.num_ebikes_available ?? 0;
     if (!eBikes && st.vehicle_types_available) {
       const ev = st.vehicle_types_available.find(v =>
@@ -619,28 +685,16 @@ async function loadCitibike() {
       );
       eBikes = ev?.count ?? 0;
     }
-
     const classic = Math.max(0, (st.num_bikes_available ?? 0) - eBikes);
     const docks   = st.num_docks_available ?? 0;
-
     Object.assign(bikeState, { eBikes, classic, docks });
 
-    document.getElementById('bike-stats').innerHTML = `
-      <div class="bike-stat">
-        <div class="stat-label">⚡ E-Bikes</div>
-        <div class="stat-num ${numColor(eBikes, 2, 1)}">${eBikes}</div>
-      </div>
-      <div class="bike-stat">
-        <div class="stat-label">Classic</div>
-        <div class="stat-num ${numColor(classic, 4, 1)}">${classic}</div>
-      </div>
-      <div class="bike-stat full-width">
-        <div class="stat-label">Open Docks</div>
-        <div class="stat-num docks ${numColor(docks, 4, 1)}">${docks}</div>
-      </div>`;
+    document.getElementById('bike-inline').innerHTML =
+      `<span class="${numColor(eBikes, 2, 1)}"><b class="bike-val">${eBikes}</b> ⚡ E-Bike${eBikes !== 1 ? 's' : ''}</span>`
+      + `&ensp;·&ensp;<span class="${numColor(classic, 4, 1)}"><b class="bike-val">${classic}</b> Classic</span>`
+      + `&ensp;·&ensp;<span class="${numColor(docks, 4, 1)}"><b class="bike-val">${docks}</b> Open Dock${docks !== 1 ? 's' : ''}</span>`;
   } catch (e) {
-    document.getElementById('bike-stats').innerHTML =
-      `<div class="err">Citibike unavailable</div>`;
+    document.getElementById('bike-inline').innerHTML = `<span class="err">Unavailable</span>`;
     console.error('Citibike:', e);
   }
 }
@@ -650,84 +704,82 @@ async function loadCitibike() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function loadFerry() {
-  const sch     = ferrySchedule();
-  const nm      = nowMins();
+  const sch      = ferrySchedule();
+  const nm       = nowMins();
   const upcoming = sch.fromRH.filter(t => parseMins(t) >= nm - 1).slice(0, 3);
   const el       = document.getElementById('ferry-rows');
 
+  // No more ferries today — show tomorrow's first departures
   if (!upcoming.length) {
     const { sch: tmSch, isWeekend: tmWknd } = tomorrowSchedule();
-    const tmType = tmWknd ? 'Weekend' : 'Weekday';
-    const tmRows = tmSch.fromRH.slice(0, 3).map(t => `
-      <div class="ferry-row">
-        <div class="ferry-top">
-          <div class="ferry-time">${fmt12(t)}</div>
-          <div class="ferry-cd ready">Tomorrow</div>
-        </div>
-        <div class="ferry-leave">
-          → Wall St ~<b>${fmt12(addMins(t, tmSch.rhToWallSt))}</b>
-          · 34th ~<b>${fmt12(addMins(t, tmSch.rhTo34th))}</b>
-        </div>
+    const tmType  = tmWknd ? 'Weekend' : 'Weekday';
+    const tmRows  = tmSch.fromRH.slice(0, 3).map(t => `
+      <div class="ferry-upcoming-row" style="margin-bottom:6px">
+        <div class="ferry-upcoming-time">${fmt12(t)}</div>
+        <div class="ferry-upcoming-cd c-green">Tomorrow</div>
+      </div>
+      <div class="ferry-leave" style="margin-bottom:14px">
+        Leave by <b>${fmt12(addMins(t, -WALK_TO_FERRY))}</b> walk · <b>${fmt12(addMins(t, -BIKE_TO_FERRY))}</b> bike<br>
+        → Wall St ~<b>${fmt12(addMins(t, tmSch.rhToWallSt))}</b><br>
+        → 34th ~<b>${fmt12(addMins(t, tmSch.rhTo34th))}</b>
       </div>`).join('');
     el.innerHTML = `<div class="ferry-tmr-hdr">No more boats · Tomorrow (${tmType})</div>` + tmRows;
     return;
   }
 
-  // If weekend and before first boat
+  // Weekend — before first boat
   if (isWeekend() && nm < parseMins(sch.fromRH[0])) {
     const first = sch.fromRH[0];
-    el.innerHTML = `<div class="loading" style="font-size:14px; line-height:1.5">
+    el.innerHTML = `<div class="ferry-primary"><div class="loading" style="line-height:1.8">
       No early service on weekends.<br>
       First boat at <b style="color:var(--text)">${fmt12(first)}</b>.
-    </div>`;
+    </div></div>`;
     return;
   }
 
-  const rows = upcoming.map(t => {
-    const depMins    = parseMins(t);
-    const diff       = depMins - nm;
-    const walkLeave  = depMins - WALK_TO_FERRY;
-    const bikeLeave  = depMins - BIKE_TO_FERRY;
-    const missedWalk = nm > walkLeave;
-    const missedBike = nm > bikeLeave;
+  // Primary departure
+  const [primary, ...rest] = upcoming;
+  const depMins    = parseMins(primary);
+  const diff       = depMins - nm;
+  const missedWalk = nm > depMins - WALK_TO_FERRY;
+  const missedBike = nm > depMins - BIKE_TO_FERRY;
 
-    // Countdown display
-    let cdLabel, cdCls;
-    if (diff <= 0) {
-      cdLabel = 'Departing'; cdCls = 'hot';
-    } else if (diff <= 5) {
-      cdLabel = `${diff} min`;  cdCls = 'hot';
-    } else if (diff <= 15) {
-      cdLabel = `${diff} min`;  cdCls = 'warn';
-    } else {
-      cdLabel = `${diff} min`;  cdCls = 'ready';
-    }
+  const isNow  = diff <= 0;
+  const bigCls = isNow ? 'c-red' : diff <= 5 ? 'c-red' : diff <= 15 ? 'c-yellow' : 'c-green';
 
-    // Leave-by line
-    let leaveHtml;
-    if (missedBike) {
-      leaveHtml = `<span class="missed">Too late to catch this one</span>`;
-    } else if (missedWalk) {
-      leaveHtml = `<span class="missed">🚲 Bike now</span>`
-        + ` · walk window closed`;
-    } else {
-      const wt = fmt12(addMins(t, -WALK_TO_FERRY));
-      const bt = fmt12(addMins(t, -BIKE_TO_FERRY));
-      leaveHtml = `Leave by <b>${wt}</b> walk · <b>${bt}</b> bike`
-        + `<br>→ Wall St ~<b>${fmt12(addMins(t, sch.rhToWallSt))}</b>`
-        + ` · 34th ~<b>${fmt12(addMins(t, sch.rhTo34th))}</b>`;
-    }
+  const numHtml = isNow
+    ? `<div class="primary-num primary-now c-red">Now</div>`
+    : `<div class="primary-num ${bigCls}">${diff}<span class="primary-unit">min</span></div>`;
 
-    return `<div class="ferry-row">
-      <div class="ferry-top">
-        <div class="ferry-time ${diff <= 10 && !missedBike ? 'urgent' : ''}">${fmt12(t)}</div>
-        <div class="ferry-cd ${cdCls}">${cdLabel}</div>
-      </div>
-      <div class="ferry-leave">${leaveHtml}</div>
+  const upcomingRows = rest.map(t => {
+    const d  = parseMins(t) - nm;
+    const dc = d <= 5 ? 'c-red' : d <= 15 ? 'c-yellow' : 'c-muted';
+    return `<div class="upcoming-row">
+      <span class="ferry-time-small">${fmt12(t)}</span>
+      <span class="upcoming-mins ${dc}">${d}<span class="upcoming-unit"> min</span></span>
     </div>`;
   }).join('');
 
-  el.innerHTML = rows;
+  let leaveByHtml;
+  if (missedBike) {
+    leaveByHtml = `<div class="leave-by"><span class="missed">Too late to catch this one</span></div>`;
+  } else if (missedWalk) {
+    leaveByHtml = `<div class="leave-by"><span class="missed">Bike now</span> · walk window closed</div>`;
+  } else {
+    leaveByHtml = `<div class="leave-by">`
+      + `Leave by <b>${fmt12(addMins(primary, -WALK_TO_FERRY))}</b> walk · <b>${fmt12(addMins(primary, -BIKE_TO_FERRY))}</b> bike<br>`
+      + `Wall St <b>${fmt12(addMins(primary, sch.rhToWallSt))}</b> · 34th <b>${fmt12(addMins(primary, sch.rhTo34th))}</b>`
+      + `</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="bus-primary">
+      <div class="bus-pill pill-ferry">Ferry</div>
+      ${numHtml}
+      <div class="ferry-dep-label">${fmt12(primary)}</div>
+    </div>
+    ${rest.length ? `<div class="upcoming-list">${upcomingRows}</div>` : ''}
+    ${leaveByHtml}`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -735,64 +787,149 @@ function loadFerry() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildTicker() {
-  const nm    = nowMins();
-  const sch   = ferrySchedule();
+  const nm  = nowMins();
+  const sch = ferrySchedule();
   const items = [];
 
-  // Bus next arrivals per route
-  BUSES.forEach(({ route, dest }) => {
-    const arrivals = busState[route + dest] ?? [];
-    if (arrivals.length) {
-      const times = arrivals.map(m => m <= 0 ? 'Now' : `${m} min`).join(' · ');
-      items.push(`<b>${route} ${dest}</b>: ${times}`);
-    } else {
-      items.push(`<b>${route} ${dest}</b>: no data`);
-    }
-  });
-
-  // Later ferries (beyond the 3 shown)
-  const later = sch.fromRH.filter(t => parseMins(t) >= nm - 1).slice(3, 6);
-  if (later.length) {
-    items.push(`Later ferries: ${later.map(fmt12).join('  ·  ')}`);
+  if (busTickerState.f.length) {
+    const times = busTickerState.f.slice(0, 3)
+      .map(({ route, mins }) => `${route} ${mins <= 0 ? 'now' : mins + ' min'}`).join(' · ');
+    items.push(`<b>F Train</b>: ${times}`);
   }
 
-  // Citibike summary
+  if (busTickerState.ac.length) {
+    const times = busTickerState.ac.slice(0, 3)
+      .map(({ route, mins }) => `${route} ${mins <= 0 ? 'now' : mins + ' min'}`).join(' · ');
+    items.push(`<b>A/C Train</b>: ${times}`);
+  }
+
+  const later = sch.fromRH.filter(t => parseMins(t) >= nm - 1).slice(3, 6);
+  if (later.length) items.push(`Later ferries: ${later.map(fmt12).join(' · ')}`);
+
   items.push(
-    `Dwight & Dikeman: <b>${bikeState.eBikes}</b> e-bike${bikeState.eBikes !== 1 ? 's' : ''} · `
-    + `<b>${bikeState.classic}</b> classic · `
-    + `<b>${bikeState.docks}</b> open dock${bikeState.docks !== 1 ? 's' : ''}`
+    `Citibike: <b>${bikeState.eBikes}</b> e-bike${bikeState.eBikes !== 1 ? 's' : ''}`
+    + ` · <b>${bikeState.classic}</b> classic`
+    + ` · <b>${bikeState.docks}</b> open dock${bikeState.docks !== 1 ? 's' : ''}`
   );
 
-  // Weekend note
-  if (isWeekend()) {
-    items.push('Weekend schedule · No early ferry service');
-  }
+  if (isWeekend()) items.push('Weekend schedule · No early ferry service');
 
-  // Build HTML: duplicate for seamless scroll loop
-  const sep = `<span class="ticker-sep">  ·  ·  ·  </span>`;
+  const sep    = `<span class="ticker-sep">  ·  ·  ·  </span>`;
   const single = items.map(i => `<span class="ticker-item">${i}</span>${sep}`).join('');
   const track  = document.getElementById('ticker');
   track.innerHTML = single + single;
 
-  // Set scroll speed based on content width (~80px/s)
   requestAnimationFrame(() => {
     const singleWidth = track.scrollWidth / 2;
     const duration    = Math.max(20, singleWidth / 80);
-    track.style.cssText = `
-      animation: ticker-scroll ${duration}s linear infinite;
-    `;
+    track.style.cssText = `animation: ticker-scroll ${duration}s linear infinite;`;
   });
 }
 
-// Inject keyframes once
-const style = document.createElement('style');
-style.textContent = `
+const tickerStyle = document.createElement('style');
+tickerStyle.textContent = `
   @keyframes ticker-scroll {
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
+  }`;
+document.head.appendChild(tickerStyle);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEATHER  (Open-Meteo, no key required)
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadWeather() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast`
+      + `?latitude=${HOME_LAT}&longitude=${HOME_LON}`
+      + `&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m`
+      + `&hourly=precipitation_probability`
+      + `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max`
+      + `&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch`
+      + `&forecast_days=1&timezone=America%2FNew_York`;
+    const data = await fetch(url).then(r => r.json());
+    const c = data.current;
+
+    const temp     = Math.round(c.temperature_2m);
+    const feels    = Math.round(c.apparent_temperature);
+    const code     = c.weather_code;
+    const wind     = Math.round(c.wind_speed_10m);
+    const rainPct  = data.daily.precipitation_probability_max?.[0] ?? 0;
+
+    document.getElementById('wx-temp').textContent = `${temp}°`;
+    document.getElementById('wx-detail').innerHTML =
+      `Feels ${feels}°<br>${wxDesc(code)} · ${wind} mph`;
+    document.getElementById('wx-rain-pct').textContent = `${rainPct}%`;
+    document.getElementById('wx-sentence').textContent =
+      buildDaySentence(c, data.daily, data.hourly);
+  } catch (e) {
+    document.getElementById('wx-sentence').textContent = 'Weather unavailable';
+    console.error('Weather:', e);
   }
-`;
-document.head.appendChild(style);
+}
+
+function buildDaySentence(current, daily, hourly) {
+  const high    = Math.round(daily.temperature_2m_max[0]);
+  const low     = Math.round(daily.temperature_2m_min[0]);
+  const maxWind = Math.round(daily.wind_speed_10m_max[0]);
+  const nowHour = new Date().getHours();
+
+  const precipByHour = {};
+  (hourly.time || []).forEach((t, i) => {
+    const h = parseInt(t.split('T')[1], 10);
+    if (h >= nowHour) precipByHour[h] = hourly.precipitation_probability[i];
+  });
+
+  const THRESH  = 45;
+  const hasRain = (start, end) =>
+    Array.from({ length: end - start }, (_, i) => start + i)
+      .some(h => (precipByHour[h] ?? 0) >= THRESH);
+
+  const morningRain   = hasRain(6,  12);
+  const afternoonRain = hasRain(12, 17);
+  const eveningRain   = hasRain(17, 22);
+  const raining       = current.weather_code >= 51;
+  const parts         = [];
+
+  parts.push(`High ${high}°, low ${low}°.`);
+
+  const periods = [morningRain && 'morning', afternoonRain && 'afternoon', eveningRain && 'evening'].filter(Boolean);
+  if (raining && periods.length) {
+    parts.push('Rainy all day — pack an umbrella.');
+  } else if (raining) {
+    parts.push('Raining now, expected to clear.');
+  } else if (periods.length === 3) {
+    parts.push('Rain throughout the day — umbrella recommended.');
+  } else if (periods.length) {
+    const when = periods.length === 2 ? `${periods[0]} and ${periods[1]}` : periods[0];
+    parts.push(`Rain expected this ${when} — pack an umbrella.`);
+  }
+
+  if (low <= 28)            parts.push('Freezing temps tonight.');
+  else if (high <= 35)      parts.push('Stays cold all day — bundle up.');
+
+  if (maxWind >= 25)        parts.push(`Very windy, up to ${maxWind} mph.`);
+  else if (maxWind >= 18)   parts.push(`Breezy, up to ${maxWind} mph.`);
+
+  if (!raining && !periods.length && maxWind < 18) {
+    if (high >= 68)              parts.push('Lovely day out there.');
+    else if (high >= 55 && low >= 45) parts.push('Decent day, no complaints.');
+  }
+
+  return parts.join(' ');
+}
+
+function wxDesc(c) {
+  if (c === 0)  return 'Clear';
+  if (c <= 2)   return 'Partly cloudy';
+  if (c <= 3)   return 'Overcast';
+  if (c <= 48)  return 'Foggy';
+  if (c <= 55)  return 'Drizzle';
+  if (c <= 67)  return 'Rain';
+  if (c <= 77)  return 'Snow';
+  if (c <= 82)  return 'Showers';
+  return 'Thunderstorm';
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REFRESH LOOP
@@ -803,7 +940,7 @@ let timer = null;
 async function refresh() {
   clearTimeout(timer);
   try {
-    await Promise.all([loadBus(), loadCitibike()]);
+    await Promise.all([loadFBus(), loadACBus(), loadCitibike(), loadWeather()]);
   } catch (e) {
     console.error('Refresh error:', e);
   }
@@ -813,14 +950,11 @@ async function refresh() {
   const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   document.getElementById('status-text').textContent = `Updated ${t}`;
 
-  // Refresh live data every 30s; ferry is schedule-based so just re-render it every minute
   timer = setTimeout(() => { if (!document.hidden) refresh(); }, 30_000);
 }
 
-// Re-render ferry/ticker every minute even without a full API refresh
 setInterval(() => { loadFerry(); buildTicker(); }, 60_000);
 
-// Wake up on tab becoming visible
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refresh();
 });
