@@ -316,16 +316,6 @@
       min-height: 0;
     }
 
-    .ferry-tmr-hdr {
-      font-size: 10px;
-      color: var(--muted);
-      letter-spacing: 0.1em;
-      margin-bottom: 14px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
     /* ── Citibike bar ────────────────────────────────────────────────────── */
     .bike-bar {
       border-top: 1px solid var(--border);
@@ -713,17 +703,24 @@ function loadFerry() {
   if (!upcoming.length) {
     const { sch: tmSch, isWeekend: tmWknd } = tomorrowSchedule();
     const tmType  = tmWknd ? 'Weekend' : 'Weekday';
-    const tmRows  = tmSch.fromRH.slice(0, 3).map(t => `
-      <div class="ferry-upcoming-row" style="margin-bottom:6px">
-        <div class="ferry-upcoming-time">${fmt12(t)}</div>
-        <div class="ferry-upcoming-cd c-green">Tomorrow</div>
-      </div>
-      <div class="ferry-leave" style="margin-bottom:14px">
-        Leave by <b>${fmt12(addMins(t, -WALK_TO_FERRY))}</b> walk · <b>${fmt12(addMins(t, -BIKE_TO_FERRY))}</b> bike<br>
-        → Wall St ~<b>${fmt12(addMins(t, tmSch.rhToWallSt))}</b><br>
-        → 34th ~<b>${fmt12(addMins(t, tmSch.rhTo34th))}</b>
+    const [tmFirst, ...tmRest] = tmSch.fromRH.slice(0, 3);
+    const tmUpcomingRows = tmRest.map(t => `
+      <div class="upcoming-row">
+        <span class="ferry-time-small">${fmt12(t)}</span>
+        <span class="upcoming-mins c-muted">Tomorrow</span>
       </div>`).join('');
-    el.innerHTML = `<div class="ferry-tmr-hdr">No more boats · Tomorrow (${tmType})</div>` + tmRows;
+    const tmLeaveBy = `<div class="leave-by">`
+      + `Leave by <b>${fmt12(addMins(tmFirst, -WALK_TO_FERRY))}</b> walk · <b>${fmt12(addMins(tmFirst, -BIKE_TO_FERRY))}</b> bike<br>`
+      + `Wall St <b>${fmt12(addMins(tmFirst, tmSch.rhToWallSt))}</b> · 34th <b>${fmt12(addMins(tmFirst, tmSch.rhTo34th))}</b>`
+      + `</div>`;
+    el.innerHTML = `
+      <div class="bus-primary">
+        <div class="bus-pill pill-ferry">Ferry</div>
+        <div class="primary-num c-muted" style="font-size:52px;line-height:1">${fmt12(tmFirst)}</div>
+        <div class="ferry-dep-label">Tomorrow · ${tmType}</div>
+      </div>
+      ${tmRest.length ? `<div class="upcoming-list">${tmUpcomingRows}</div>` : ''}
+      ${tmLeaveBy}`;
     return;
   }
 
