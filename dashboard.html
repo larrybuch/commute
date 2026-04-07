@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Hook · Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    /* ── Departure board palette ─────────────────────────────────────────── */
+    :root {
+      --bg:     #1c1a18;
+      --panel:  #201e1b;
+      --border: #332e24;
+      --dim:    #262420;
+      --text:   #e8d5a0;
+      --muted:  #7a6e50;
+      --green:  #4cd964;
+      --yellow: #ffd60a;
+      --red:    #ff453a;
+      --blue:   #4da6ff;
+      --amber:  #ffb300;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', 'Courier New', 'Lucida Console', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      -webkit-font-smoothing: auto;
+    }
+
+    /* ── Page layout ─────────────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+    }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 24px;
+      border-top: 1px solid var(--amber);
+      border-bottom: 2px solid var(--amber);
+      gap: 20px;
+    }
+
+    .hd-left { flex: 1; }
+
+    .hd-title {
+      font-size: 15px;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+    }
+
+    .hd-sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 2px;
+      letter-spacing: 0.1em;
+    }
+
+    .clock {
+      font-size: 46px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      flex-shrink: 0;
+    }
+
+    .hd-right {
+      flex: 1;
+      text-align: right;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .live-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 5px;
+      vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    /* ── Three-column grid ───────────────────────────────────────────────── */
+    .panels {
+      display: grid;
+      grid-template-columns: 2fr 1.4fr 1.6fr;
+      gap: 1px;
+      background: var(--border);
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      padding: 18px 24px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-label {
+      font-size: 10px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--amber);
+      margin-bottom: 14px;
+      flex-shrink: 0;
+    }
+
+    /* ── Bus panel ───────────────────────────────────────────────────────── */
+    #bus-routes {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+
+    .bus-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bus-row:first-child { padding-top: 0; }
+    .bus-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+    .bus-pill {
+      font-size: 12px;
+      font-weight: 400;
+      padding: 4px 8px;
+      border-radius: 0;
+      min-width: 46px;
+      text-align: center;
+      flex-shrink: 0;
+      letter-spacing: 0.1em;
+      border: 1px solid currentColor;
+    }
+
+    .pill-b61 { background: #0a1928; color: var(--blue);  border-color: var(--blue); }
+    .pill-b57 { background: #0d2010; color: var(--green); border-color: var(--green); }
+
+    .bus-info { flex: 1; min-width: 0; }
+
+    .bus-dest {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 1px;
+    }
+
+    .bus-stop {
+      font-size: 10px;
+      color: var(--amber);
+      opacity: 0.7;
+      margin-bottom: 3px;
+      letter-spacing: 0.08em;
+    }
+
+    .bus-arrivals {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+
+    .arrival-big {
+      font-size: 36px;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .arrival-unit {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .arrival-more {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .c-green  { color: var(--green); }
+    .c-yellow { color: var(--yellow); }
+    .c-red    { color: var(--red); }
+    .c-muted  { color: var(--muted); }
+
+    /* ── Citibike panel ──────────────────────────────────────────────────── */
+    #bike-stats {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+
+    .bike-stat {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+    }
+
+    .bike-stat.full-width {
+      border-bottom: none;
+    }
+
+    .stat-num {
+      font-size: 42px;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-num.docks {
+      font-size: 42px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-top: 0;
+    }
+
+    /* ── Ferry panel ─────────────────────────────────────────────────────── */
+    #ferry-rows {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+
+    .ferry-row {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ferry-row:first-child { padding-top: 0; }
+    .ferry-row:last-child  { border-bottom: none; padding-bottom: 0; }
+
+    .ferry-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+
+    .ferry-time {
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .ferry-time.urgent { color: var(--red); }
+
+    .ferry-cd {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .ferry-cd.warn  { color: var(--yellow); }
+    .ferry-cd.hot   { color: var(--red); }
+    .ferry-cd.ready { color: var(--green); }
+
+    .ferry-leave {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .ferry-leave b { color: var(--text); font-weight: 600; }
+    .ferry-leave .missed { color: var(--red); }
+
+    /* ── Ticker ──────────────────────────────────────────────────────────── */
+    .ticker-bar {
+      border-top: 2px solid var(--text);
+      padding: 0;
+      height: 32px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticker-track {
+      display: flex;
+      white-space: nowrap;
+      will-change: transform;
+    }
+
+    .ticker-item {
+      font-size: 11px;
+      color: var(--muted);
+      padding: 0 28px;
+      flex-shrink: 0;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .ticker-item b { color: var(--text); }
+
+    .ticker-sep {
+      color: var(--border);
+      padding: 0 4px;
+    }
+
+    /* ── Utility ─────────────────────────────────────────────────────────── */
+    .loading { color: var(--muted); font-size: 13px; }
+    .err     { color: var(--red);   font-size: 12px; }
+
+    .ferry-tmr-hdr {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="hd-left">
+      <div class="hd-title">Red Hook</div>
+      <div class="hd-sub">Atlantic Basin · Dwight & Dikeman</div>
+    </div>
+    <div class="clock" id="clock">--:--</div>
+    <div class="hd-right">
+      <span class="live-cursor" id="live-dot"></span>
+      <span id="status-text">Loading…</span>
+    </div>
+  </header>
+
+  <!-- ── Panels ── -->
+  <div class="panels">
+
+    <!-- Bus -->
+    <div class="panel">
+      <div class="panel-label">Buses from Red Hook</div>
+      <div id="bus-routes"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- Citibike -->
+    <div class="panel">
+      <div class="panel-label">Citibike · Dwight & Dikeman</div>
+      <div id="bike-stats"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- Ferry -->
+    <div class="panel">
+      <div class="panel-label">Ferry · Atlantic Basin → Manhattan</div>
+      <div id="ferry-rows"><div class="loading">Loading…</div></div>
+    </div>
+
+  </div>
+
+  <!-- ── Ticker ── -->
+  <div class="ticker-bar">
+    <div class="ticker-track" id="ticker">
+      <span class="ticker-item">Loading…</span>
+    </div>
+  </div>
+
+</div>
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// CONFIG — edit these if stop IDs or times need updating
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MTA_KEY  = '47d976ac-47a9-4009-816a-a39448f4866e';
+const HOME_LAT = 40.6760;
+const HOME_LON = -74.0115;
+
+// Simulation override — set SIM_TIME to a "HH:MM" string to freeze the clock,
+// and SIM_WEEKEND to true/false to force day type. Set both to null for live mode.
+const SIM_TIME    = null;
+const SIM_WEEKEND = null;
+
+// Three outbound bus routes from Red Hook.
+// Stop IDs verified via MTA BusTime stops-for-location API.
+// NOTE: B61 → A/C uses Lorraine/Columbia (E direction). If results look wrong,
+// swap MTA_306087 for MTA_306088 (Lorraine/Hicks, also E).
+const BUSES = [
+  { route: 'B57', id: 'MTA_901797', dest: '→ F train',   note: 'Otsego/Creamer'    },
+  { route: 'B61', id: 'MTA_901797', dest: '→ F train',   note: 'Otsego/Creamer'    },
+  { route: 'B61', id: 'MTA_305096', dest: '→ A/C train', note: 'Van Brunt/Dikeman' },
+];
+
+// NYC Ferry — South Brooklyn Route, from ferry.nyc
+// fromRH = departures from Atlantic Basin (Red Hook)
+const FERRY = {
+  weekday: {
+    fromRH: [
+      '06:40','07:25','08:10','08:55','09:40','10:25','11:10','11:55',
+      '12:40','13:25','14:10','14:55','15:40','16:25','17:10','17:55',
+      '18:31','19:16','20:01','20:46',
+    ],
+    rhToWallSt: 16,
+    rhTo34th:   32,
+  },
+  weekend: {
+    fromRH: [
+      '09:20','10:03','10:47','11:32','12:16','13:00','13:44','14:28',
+      '15:12','15:56','16:40','17:24','17:59','18:43','19:27','20:11',
+    ],
+    rhToWallSt: 15,
+    rhTo34th:   31,
+  },
+};
+
+// Walk/bike times from home (23 Dikeman St) to Atlantic Basin ferry terminal
+const WALK_TO_FERRY = 13;  // minutes
+const BIKE_TO_FERRY = 4;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+function nowMins() {
+  if (SIM_TIME) return parseMins(SIM_TIME);
+  const n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function parseMins(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function addMins(t, delta) {
+  const total = parseMins(t) + delta;
+  return `${String(Math.floor(total / 60) % 24).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`;
+}
+
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')}\u202f${h >= 12 ? 'PM' : 'AM'}`;
+}
+
+function isWeekend() {
+  if (SIM_WEEKEND !== null) return SIM_WEEKEND;
+  const d = new Date().getDay();
+  return d === 0 || d === 6;
+}
+
+function ferrySchedule() {
+  return isWeekend() ? FERRY.weekend : FERRY.weekday;
+}
+
+function tomorrowSchedule() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const day = d.getDay();
+  const tmWeekend = day === 0 || day === 6;
+  return { sch: tmWeekend ? FERRY.weekend : FERRY.weekday, isWeekend: tmWeekend };
+}
+
+function numColor(n, good, warn) {
+  if (n >= good) return 'c-green';
+  if (n >= warn) return 'c-yellow';
+  return 'c-red';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CLOCK
+// ─────────────────────────────────────────────────────────────────────────────
+
+function tickClock() {
+  const n = new Date();
+  const h = n.getHours() % 12 || 12;
+  const m = String(n.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent = `${h}:${m}`;
+}
+
+setInterval(tickClock, 1000);
+tickClock();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BUS  (MTA BusTime SIRI API)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Shared state for the ticker
+const busState = {};  // key: route+dest → arrivals[]
+
+async function loadBus() {
+  try {
+    const results = await Promise.all(BUSES.map(async (stop) => {
+      const lineRef = encodeURIComponent(`MTA NYCT_${stop.route}`);
+      const url = `https://bustime.mta.info/api/siri/stop-monitoring.json`
+        + `?key=${MTA_KEY}`
+        + `&MonitoringRef=${stop.id}`
+        + `&LineRef=${lineRef}`
+        + `&MaximumStopVisits=4`;
+
+      const data = await fetch(url).then(r => r.json());
+      const visits = data?.Siri?.ServiceDelivery
+        ?.StopMonitoringDelivery?.[0]?.MonitoredStopVisit ?? [];
+
+      const arrivals = visits.map(v => {
+        const call = v.MonitoredVehicleJourney?.MonitoredCall;
+        const raw  = call?.ExpectedArrivalTime || call?.AimedArrivalTime;
+        return raw ? Math.round((new Date(raw) - Date.now()) / 60000) : null;
+      }).filter(m => m !== null && m >= -1).slice(0, 3);
+
+      return { ...stop, arrivals };
+    }));
+
+    const rows = results.map(({ route, dest, note, arrivals }) => {
+      busState[route + dest] = arrivals;
+
+      const pillCls = route === 'B61' ? 'pill-b61' : 'pill-b57';
+
+      let arrHtml;
+      if (!arrivals.length) {
+        arrHtml = `<span class="arrival-big c-muted" style="font-size:28px">—</span>`;
+      } else {
+        const [first, ...rest] = arrivals;
+        const bigCls = first <= 0 ? 'c-red' : first <= 4 ? 'c-yellow' : '';
+        const unit   = first > 0 ? `<span class="arrival-unit"> min</span>` : '';
+        const label  = first <= 0 ? 'Now' : String(first);
+        const more   = rest.length
+          ? `<span class="arrival-more">· ${rest.map(m => m <= 0 ? 'Now' : m + ' min').join(' · ')}</span>`
+          : '';
+        arrHtml = `<span class="arrival-big ${bigCls}">${label}</span>${unit}${more}`;
+      }
+
+      const noteHtml = note ? `<div class="bus-stop">${note}</div>` : '';
+
+      return `<div class="bus-row">
+        <div class="bus-pill ${pillCls}">${route}</div>
+        <div class="bus-info">
+          <div class="bus-dest">${dest}</div>
+          ${noteHtml}
+          <div class="bus-arrivals">${arrHtml}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('bus-routes').innerHTML = rows;
+  } catch (e) {
+    document.getElementById('bus-routes').innerHTML =
+      `<div class="err">Bus data unavailable</div>`;
+    console.error('Bus:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CITIBIKE  (GBFS, no key required)
+// ─────────────────────────────────────────────────────────────────────────────
+
+const bikeState = { eBikes: 0, classic: 0, docks: 0 };
+
+async function loadCitibike() {
+  try {
+    const [infoRes, statusRes] = await Promise.all([
+      fetch('https://gbfs.citibikenyc.com/gbfs/en/station_information.json'),
+      fetch('https://gbfs.citibikenyc.com/gbfs/en/station_status.json'),
+    ]);
+    const { data: { stations: info   } } = await infoRes.json();
+    const { data: { stations: status } } = await statusRes.json();
+
+    const statusMap = Object.fromEntries(status.map(s => [s.station_id, s]));
+    const home      = info.find(s => s.name.toLowerCase().includes('dikeman'));
+    if (!home) throw new Error('Station not found');
+
+    const st = statusMap[home.station_id] ?? {};
+
+    // Support GBFS v2 (num_ebikes_available) and v3 (vehicle_types_available)
+    let eBikes = st.num_ebikes_available ?? 0;
+    if (!eBikes && st.vehicle_types_available) {
+      const ev = st.vehicle_types_available.find(v =>
+        (v.vehicle_type_id ?? '').toLowerCase().includes('elec') ||
+        (v.vehicle_type_id ?? '').toLowerCase().includes('ebike')
+      );
+      eBikes = ev?.count ?? 0;
+    }
+
+    const classic = Math.max(0, (st.num_bikes_available ?? 0) - eBikes);
+    const docks   = st.num_docks_available ?? 0;
+
+    Object.assign(bikeState, { eBikes, classic, docks });
+
+    document.getElementById('bike-stats').innerHTML = `
+      <div class="bike-stat">
+        <div class="stat-label">⚡ E-Bikes</div>
+        <div class="stat-num ${numColor(eBikes, 2, 1)}">${eBikes}</div>
+      </div>
+      <div class="bike-stat">
+        <div class="stat-label">Classic</div>
+        <div class="stat-num ${numColor(classic, 4, 1)}">${classic}</div>
+      </div>
+      <div class="bike-stat full-width">
+        <div class="stat-label">Open Docks</div>
+        <div class="stat-num docks ${numColor(docks, 4, 1)}">${docks}</div>
+      </div>`;
+  } catch (e) {
+    document.getElementById('bike-stats').innerHTML =
+      `<div class="err">Citibike unavailable</div>`;
+    console.error('Citibike:', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FERRY  (schedule-based, from ferry.nyc South Brooklyn Route)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function loadFerry() {
+  const sch     = ferrySchedule();
+  const nm      = nowMins();
+  const upcoming = sch.fromRH.filter(t => parseMins(t) >= nm - 1).slice(0, 3);
+  const el       = document.getElementById('ferry-rows');
+
+  if (!upcoming.length) {
+    const { sch: tmSch, isWeekend: tmWknd } = tomorrowSchedule();
+    const tmType = tmWknd ? 'Weekend' : 'Weekday';
+    const tmRows = tmSch.fromRH.slice(0, 3).map(t => `
+      <div class="ferry-row">
+        <div class="ferry-top">
+          <div class="ferry-time">${fmt12(t)}</div>
+          <div class="ferry-cd ready">Tomorrow</div>
+        </div>
+        <div class="ferry-leave">
+          → Wall St ~<b>${fmt12(addMins(t, tmSch.rhToWallSt))}</b>
+          · 34th ~<b>${fmt12(addMins(t, tmSch.rhTo34th))}</b>
+        </div>
+      </div>`).join('');
+    el.innerHTML = `<div class="ferry-tmr-hdr">No more boats · Tomorrow (${tmType})</div>` + tmRows;
+    return;
+  }
+
+  // If weekend and before first boat
+  if (isWeekend() && nm < parseMins(sch.fromRH[0])) {
+    const first = sch.fromRH[0];
+    el.innerHTML = `<div class="loading" style="font-size:14px; line-height:1.5">
+      No early service on weekends.<br>
+      First boat at <b style="color:var(--text)">${fmt12(first)}</b>.
+    </div>`;
+    return;
+  }
+
+  const rows = upcoming.map(t => {
+    const depMins    = parseMins(t);
+    const diff       = depMins - nm;
+    const walkLeave  = depMins - WALK_TO_FERRY;
+    const bikeLeave  = depMins - BIKE_TO_FERRY;
+    const missedWalk = nm > walkLeave;
+    const missedBike = nm > bikeLeave;
+
+    // Countdown display
+    let cdLabel, cdCls;
+    if (diff <= 0) {
+      cdLabel = 'Departing'; cdCls = 'hot';
+    } else if (diff <= 5) {
+      cdLabel = `${diff} min`;  cdCls = 'hot';
+    } else if (diff <= 15) {
+      cdLabel = `${diff} min`;  cdCls = 'warn';
+    } else {
+      cdLabel = `${diff} min`;  cdCls = 'ready';
+    }
+
+    // Leave-by line
+    let leaveHtml;
+    if (missedBike) {
+      leaveHtml = `<span class="missed">Too late to catch this one</span>`;
+    } else if (missedWalk) {
+      leaveHtml = `<span class="missed">🚲 Bike now</span>`
+        + ` · walk window closed`;
+    } else {
+      const wt = fmt12(addMins(t, -WALK_TO_FERRY));
+      const bt = fmt12(addMins(t, -BIKE_TO_FERRY));
+      leaveHtml = `Leave by <b>${wt}</b> walk · <b>${bt}</b> bike`
+        + `<br>→ Wall St ~<b>${fmt12(addMins(t, sch.rhToWallSt))}</b>`
+        + ` · 34th ~<b>${fmt12(addMins(t, sch.rhTo34th))}</b>`;
+    }
+
+    return `<div class="ferry-row">
+      <div class="ferry-top">
+        <div class="ferry-time ${diff <= 10 && !missedBike ? 'urgent' : ''}">${fmt12(t)}</div>
+        <div class="ferry-cd ${cdCls}">${cdLabel}</div>
+      </div>
+      <div class="ferry-leave">${leaveHtml}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = rows;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TICKER
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildTicker() {
+  const nm    = nowMins();
+  const sch   = ferrySchedule();
+  const items = [];
+
+  // Bus next arrivals per route
+  BUSES.forEach(({ route, dest }) => {
+    const arrivals = busState[route + dest] ?? [];
+    if (arrivals.length) {
+      const times = arrivals.map(m => m <= 0 ? 'Now' : `${m} min`).join(' · ');
+      items.push(`<b>${route} ${dest}</b>: ${times}`);
+    } else {
+      items.push(`<b>${route} ${dest}</b>: no data`);
+    }
+  });
+
+  // Later ferries (beyond the 3 shown)
+  const later = sch.fromRH.filter(t => parseMins(t) >= nm - 1).slice(3, 6);
+  if (later.length) {
+    items.push(`Later ferries: ${later.map(fmt12).join('  ·  ')}`);
+  }
+
+  // Citibike summary
+  items.push(
+    `Dwight & Dikeman: <b>${bikeState.eBikes}</b> e-bike${bikeState.eBikes !== 1 ? 's' : ''} · `
+    + `<b>${bikeState.classic}</b> classic · `
+    + `<b>${bikeState.docks}</b> open dock${bikeState.docks !== 1 ? 's' : ''}`
+  );
+
+  // Weekend note
+  if (isWeekend()) {
+    items.push('Weekend schedule · No early ferry service');
+  }
+
+  // Build HTML: duplicate for seamless scroll loop
+  const sep = `<span class="ticker-sep">  ·  ·  ·  </span>`;
+  const single = items.map(i => `<span class="ticker-item">${i}</span>${sep}`).join('');
+  const track  = document.getElementById('ticker');
+  track.innerHTML = single + single;
+
+  // Set scroll speed based on content width (~80px/s)
+  requestAnimationFrame(() => {
+    const singleWidth = track.scrollWidth / 2;
+    const duration    = Math.max(20, singleWidth / 80);
+    track.style.cssText = `
+      animation: ticker-scroll ${duration}s linear infinite;
+    `;
+  });
+}
+
+// Inject keyframes once
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+`;
+document.head.appendChild(style);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFRESH LOOP
+// ─────────────────────────────────────────────────────────────────────────────
+
+let timer = null;
+
+async function refresh() {
+  clearTimeout(timer);
+  try {
+    await Promise.all([loadBus(), loadCitibike()]);
+  } catch (e) {
+    console.error('Refresh error:', e);
+  }
+  loadFerry();
+  buildTicker();
+
+  const t = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  document.getElementById('status-text').textContent = `Updated ${t}`;
+
+  // Refresh live data every 30s; ferry is schedule-based so just re-render it every minute
+  timer = setTimeout(() => { if (!document.hidden) refresh(); }, 30_000);
+}
+
+// Re-render ferry/ticker every minute even without a full API refresh
+setInterval(() => { loadFerry(); buildTicker(); }, 60_000);
+
+// Wake up on tab becoming visible
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refresh();
+});
+
+refresh();
+</script>
+</body>
+</html>
