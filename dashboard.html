@@ -401,84 +401,79 @@
 
     /* ── Mobile (iPhone portrait) ────────────────────────────────────────── */
     @media (max-width: 500px) {
-      body { overflow-y: auto; }
+      body { overflow: hidden; }
 
       .layout {
-        height: auto;
-        grid-template-rows: auto auto auto auto auto;
+        height: 100svh;
+        grid-template-rows: auto auto 1fr auto auto;
       }
 
       /* Header */
-      header {
-        padding: 10px 16px;
-        gap: 10px;
-      }
-      .hd-title    { font-size: 13px; }
-      .hd-sub      { display: none; }
-      .clock       { font-size: 38px; }
-      .hd-right    { font-size: 10px; white-space: nowrap; overflow: hidden; }
+      header    { padding: 8px 14px; gap: 10px; }
+      .hd-title { font-size: 12px; }
+      .hd-sub   { display: none; }
+      .clock    { font-size: 30px; }
+      .hd-right    { font-size: 9px; white-space: nowrap; }
       #status-text { display: none; }
 
-      /* Weather strip */
-      .weather-strip {
-        padding: 10px 16px;
-        gap: 14px;
-        flex-wrap: wrap;
-      }
-      .wx-icon     { display: none; }
-      .wx-temp-big { font-size: 38px; }
-      .wx-rain-pct { font-size: 28px; }
-      .wx-sentence { display: none; }
-      .wx-sunset-time { font-size: 15px; }
+      /* Weather strip — compact single line */
+      .weather-strip   { padding: 7px 14px; gap: 10px; flex-wrap: nowrap; }
+      .wx-icon         { display: none; }
+      .wx-temp-big     { font-size: 28px; }
+      .wx-detail       { font-size: 9px; line-height: 1.5; }
+      .wx-rain-pct     { font-size: 20px; }
+      .wx-rain-label   { font-size: 9px; }
+      .wx-divider      { height: 20px; }
+      .wx-sentence     { display: none; }
+      .wx-sunset-time  { font-size: 13px; }
+      .wx-sunset-label { font-size: 9px; }
 
-      /* Panels: single scrollable column */
+      /* Panels: buses side-by-side on top, ferry full-width below */
       .panels {
-        grid-template-columns: 1fr;
-        background: transparent;
-        gap: 0;
-        overflow: visible;
-        min-height: unset;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        min-height: 0;
+        overflow: hidden;
       }
-      .panel {
-        padding: 18px 20px 16px;
-        overflow: visible;
-        border-bottom: 1px solid var(--border);
-      }
-      .panel-label    { font-size: 10px; }
-      .panel-sublabel { margin-bottom: 10px; }
+      .panel:nth-child(3) { grid-column: 1 / -1; }
 
-      /* Panel inner grid: shorter primary row */
-      #f-panel, #ac-panel, #ferry-rows {
-        grid-template-rows: 120px auto auto;
-      }
+      .panel          { padding: 10px 12px 8px; overflow: hidden; }
+      .panel-label    { font-size: 9px; margin-bottom: 2px; }
+      .panel-sublabel { font-size: 8px; margin-bottom: 8px; }
 
-      /* Primary number */
-      .primary-num  { font-size: 80px; }
-      .primary-unit { font-size: 22px; }
-      .primary-now  { font-size: 58px; }
-      .bus-primary  { padding-top: 10px; }
+      /* Panel inner grid */
+      #f-panel, #ac-panel { grid-template-rows: 82px auto auto; }
+      #ferry-rows          { grid-template-rows: 82px auto auto; }
 
-      /* Ferry dep label */
-      .ferry-dep-label { font-size: 16px; }
+      /* Primary — compact for narrow bus columns */
+      .primary-num  { font-size: 54px; }
+      .primary-unit { font-size: 14px; }
+      .primary-now  { font-size: 40px; }
+      .bus-primary  { padding-top: 6px; }
+      .bus-pill     { font-size: 11px; padding: 3px 10px; margin-bottom: 8px; }
+
+      /* Ferry gets a bigger number (full width) */
+      .panel:nth-child(3) .primary-num  { font-size: 68px; }
+      .panel:nth-child(3) .primary-unit { font-size: 18px; }
+
+      .ferry-dep-label  { font-size: 12px; margin-top: 3px; }
+      .ferry-time-small { font-size: 11px; min-width: 56px; }
 
       /* Upcoming */
-      .upcoming-list { padding-top: 10px; margin-top: 10px; gap: 8px; }
-      .upcoming-mins { font-size: 22px; }
-      .upcoming-unit { font-size: 11px; }
+      .upcoming-list { padding-top: 7px; margin-top: 7px; gap: 5px; }
+      .upcoming-mins { font-size: 18px; }
+      .upcoming-unit { font-size: 9px; }
+      .upcoming-pill { font-size: 10px; padding: 2px 6px; }
 
       /* Leave-by */
-      .leave-by { font-size: 11px; }
+      .leave-by { font-size: 9px; padding-top: 5px; margin-top: 6px; line-height: 1.6; }
 
       /* Citibike */
-      .bike-bar {
-        padding: 14px 16px;
-        font-size: 14px;
-        gap: 16px;
-        flex-wrap: wrap;
-      }
+      .bike-bar    { padding: 8px 14px; font-size: 12px; gap: 14px; flex-wrap: wrap; }
 
       /* Ticker */
-      .ticker-item { font-size: 10px; padding: 0 16px; }
+      .ticker-bar  { height: 22px; }
+      .ticker-item { font-size: 9px; padding: 0 14px; }
     }
   </style>
 </head>
