@@ -359,6 +359,17 @@
     .bike-bar-label { color: var(--amber); }
     .bike-val { color: var(--text); }
 
+    /* Mobile citibike panel — hidden on desktop */
+    #bike-panel { display: none; }
+
+    .bike-stat {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+    }
+    .bike-stat-num   { font-size: 38px; line-height: 1; font-variant-numeric: tabular-nums; }
+    .bike-stat-label { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.08em; }
+
     /* ── Ticker ──────────────────────────────────────────────────────────── */
     .ticker-bar {
       border-top: 2px solid var(--amber);
@@ -428,14 +439,15 @@
       .wx-sunset-time  { font-size: 13px; }
       .wx-sunset-label { font-size: 9px; }
 
-      /* Panels: buses side-by-side on top, ferry full-width below */
+      /* Panels: true 2×2 grid — buses top, ferry+bike bottom */
       .panels {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr 1fr;
         min-height: 0;
         overflow: hidden;
       }
-      .panel:nth-child(3) { grid-column: 1 / -1; }
+      #bike-panel { display: flex; }
+      .bike-bar   { display: none; }
 
       .panel          { padding: 10px 12px 8px; overflow: hidden; }
       .panel-label    { font-size: 9px; margin-bottom: 2px; }
@@ -445,16 +457,12 @@
       #f-panel, #ac-panel { grid-template-rows: 82px auto auto; }
       #ferry-rows          { grid-template-rows: 82px auto auto; }
 
-      /* Primary — compact for narrow bus columns */
+      /* Primary — compact for narrow columns */
       .primary-num  { font-size: 54px; }
       .primary-unit { font-size: 14px; }
       .primary-now  { font-size: 40px; }
       .bus-primary  { padding-top: 6px; }
       .bus-pill     { font-size: 11px; padding: 3px 10px; margin-bottom: 8px; }
-
-      /* Ferry gets a bigger number (full width) */
-      .panel:nth-child(3) .primary-num  { font-size: 68px; }
-      .panel:nth-child(3) .primary-unit { font-size: 18px; }
 
       .ferry-dep-label  { font-size: 12px; margin-top: 3px; }
       .ferry-time-small { font-size: 11px; min-width: 56px; }
@@ -468,8 +476,9 @@
       /* Leave-by */
       .leave-by { font-size: 9px; padding-top: 5px; margin-top: 6px; line-height: 1.6; }
 
-      /* Citibike */
-      .bike-bar    { padding: 8px 14px; font-size: 12px; gap: 14px; flex-wrap: wrap; }
+      /* Citibike panel stats */
+      .bike-stat-num   { font-size: 32px; }
+      .bike-stat-label { font-size: 9px; }
 
       /* Ticker */
       .ticker-bar  { height: 22px; }
@@ -534,6 +543,13 @@
       <div class="panel-label">Next Boat · Manhattan</div>
       <div class="panel-sublabel">Atlantic Basin</div>
       <div id="ferry-rows"><div class="loading">Loading…</div></div>
+    </div>
+
+    <!-- Citibike (mobile panel — hidden on desktop) -->
+    <div class="panel" id="bike-panel">
+      <div class="panel-label">Citibike</div>
+      <div class="panel-sublabel">Dwight & Dikeman</div>
+      <div id="bike-panel-content"><div class="loading">Loading…</div></div>
     </div>
 
   </div>
@@ -793,6 +809,10 @@ async function loadCitibike() {
       `<span class="${numColor(eBikes, 2, 1)}"><b class="bike-val">${eBikes}</b> ⚡ E-Bike${eBikes !== 1 ? 's' : ''}</span>`
       + `&ensp;·&ensp;<span class="${numColor(classic, 4, 1)}"><b class="bike-val">${classic}</b> Classic</span>`
       + `&ensp;·&ensp;<span class="${numColor(docks, 4, 1)}"><b class="bike-val">${docks}</b> Open Dock${docks !== 1 ? 's' : ''}</span>`;
+    document.getElementById('bike-panel-content').innerHTML =
+      `<div class="bike-stat"><span class="bike-stat-num ${numColor(eBikes, 2, 1)}">${eBikes}</span><span class="bike-stat-label">⚡ E-Bikes</span></div>`
+      + `<div class="bike-stat"><span class="bike-stat-num ${numColor(classic, 4, 1)}">${classic}</span><span class="bike-stat-label">Classic</span></div>`
+      + `<div class="bike-stat"><span class="bike-stat-num ${numColor(docks, 4, 1)}">${docks}</span><span class="bike-stat-label">Open Docks</span></div>`;
   } catch (e) {
     document.getElementById('bike-inline').innerHTML = `<span class="err">Unavailable</span>`;
     console.error('Citibike:', e);
